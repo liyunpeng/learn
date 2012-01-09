@@ -2,7 +2,7 @@
 #include <sys/wait.h>
 #include <stdio.h>
 #include <unistd.h>
-#include </home/user/learn/c/threada.h>
+#include </home/liyunpeng/learn/c_api/threada.h>
 
 int main()
 {
