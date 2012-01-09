@@ -1,0 +1,12 @@
+#! /bin/sh
+# config enviroment 
+echo "config enviroment..."
+export LD_LIBRARY_PATH=.:$LD_LIBRARY_PATH
+echo "LD_LIBRARY_PATH=" $LD_LIBRARY_PATH
+
+# ldd to list libraries dependenciss
+ldd ./test
+
+# run
+./test
+
