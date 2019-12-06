@@ -199,9 +199,7 @@ type UserService interface {
 	service.Init()
 
 服务准备好了， 业务方法的提供者就是服务里注入依赖，因为服务需要承载业务，业务是服务所依赖的， 所以 注入业务方法， 就叫做注入依赖。 
-
- 
-细说1. 定义一个完整的业务结构体和隶属于本业务的方法， 讲解方便， 只列举一个方法， 生产环境，一个业务会有很多方法：
+ 先定义一个完整的业务结构体和隶属于本业务的方法， 讲解方便， 只列举一个方法， 生产环境，一个业务会有很多方法：
 type User struct{}
 
 func (u *User) Hello(ctx context.Context, req *proto.Request, res *proto.Response) error {
@@ -209,16 +207,35 @@ func (u *User) Hello(ctx context.Context, req *proto.Request, res *proto.Respons
 	return nil
 }
 准备好了业务，现在就要把业务注入到服务里了：
+业务方法使用者要创建一个micro服务， 并用该服务的client(）得到该客户端， 对应的
+业务方法提供者要创建一个micro服务， 并用该服务的serverr(）得到服务端。 
+提供者要把业务注入到这个服务里：
 proto.RegisterUserHandler(service.Server(), new(User))
-
-细说2.  业务方法的使用者， 就要
-
-
-先看下外部程序如何调用的， 再讲生成的框架代码。
-外部调用：
-
+下面看下业务注入的生成的框架代码;
+type UserHandler interface {
+	Hello(context.Context, *Request, *Response) error
+}
+handler是专门负责依赖注入的， handler接口里的方法就要注入的方法， 和service接口不同， service接口里的方法是规范了业务使用者rpc调用的方法的声明格式
 
 
+func RegisterUserHandler(s server.Server, hdlr UserHandler, opts ...server.HandlerOption) error {
+	type user interface {
+		Hello(ctx context.Context, in *Request, out *Response) error
+	}
+	type User struct {
+		user
+	}
+	h := &userHandler{hdlr}
+	return s.Handle(s.NewHandler(&User{h}, opts...))
+}
+
+type userHandler struct {
+	UserHandler
+}
+
+func (h *userHandler) Hello(ctx context.Context, in *Request, out *Response) error {
+	return h.UserHandler.Hello(ctx, in, out)
+}
 
 
 
