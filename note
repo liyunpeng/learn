@@ -1,0 +1,225 @@
+ 工作的抽象级别
+ 真实线 原点， 虚妄
+ 
+ 能无视忽略不重要的， 是不为所动的能力
+ 
+  各种各样的视频， 
+ 的不理解，yiyang的目光， 
+ 困难
+ 疼痛
+ 能忽略， 很不容易
+ 
+ 不为所动可以列为第几种能力
+ 
+ 实惠的源泉是什么， 是不为所动， 可以戒
+ 
+ 
+ 
+ 好听的音乐多久会成文厌烦
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 可以不随时间严防的是什么， 自己的想象， 图示化， 再想象， 再图示化
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 索引 ：
+ 
+ https://blog.csdn.net/ugg/article/details/41894947
+ 
+ https://blog.csdn.net/u012978884/article/details/52416997
+ 
+MySQL innoDB索引底层原理详解  AAAAAAAAAAA
+
+https://blog.csdn.net/z_ryan/article/details/79685072
+
+https://www.cnblogs.com/barrywxx/p/8678698.html
+
+
+简单剖析B树（B-Tree）与Ｂ+树
+
+https://blog.csdn.net/fuyuwei2015/article/details/72870131
+
+https://www.cnblogs.com/williamjie/p/11081081.html
+
+
+DNS原理总结及其解析过程详解
+2017-12-12 15:54:21 chenxianru1 阅读数 8993  收藏 更多
+
+redis锁
+https://blog.csdn.net/qq315737546/article/details/79728676
+
+
+
+
+https://blog.csdn.net/enweitech/article/details/81781405
+找一个参考目标提高自己， 
+考到自己的差距
+没有目标， 看不到这个差距， 像自动控制系统， 得有一个目标
+架构师方向培养自己
+先成为一个中级水平的软件工程师
+自己现在能到几层楼
+
+服务：接口， 实现， 
+handler,  向服务里注册方法
+
+框架部分， 业务部分
+
+服务的提供者 ; 注册， 注入服务方法
+服务的使用者， 拿到服务， 调用方法
+
+都是micro 服务的客户端
+代码分为框架部分， 和业务部分， 框架部分基本是共性的， 
+所以可以用生成的方式， 自动化生成这些代码
+所谓生成就是把框架生成好， 
+框架被进一步延伸了， 需要程序员自己去写的东西就被限制在业务部分， 
+这也减少了错误的发生， 和错误的排查方向 ， 可以用更短时间写出更高质量的代码， 
+这个思想和golang也是一致， 同性的需求都被整合到语言本身， 而不是交个开发者实现， 
+像通道， map,  切片， 以及net包等， 这些在c语言里是没有的， 
+c语言也可以实现这些东西， 但需要花很多的时间调试， 需要非常高的技能
+现在这些都被纳入到语言本身的支持， 使用时直调用即可， 
+通道， map， 协程基本是每个开发者都需要的， 
+回到micro, 把共性进一步延伸了， 
+只不过需要自己编写接口，手动生成
+这些抽象出来的共性组成的框架，一一道来
+1. 服务接口里业务要实现的方法， 这个生成的接口方法，这个就是proto离定义的
+type UserService interface {
+	Hello(ctx context.Context, in *Request, opts ...client.CallOption) (*Response, error)  规定了业务方法的使用者在调用这个方法参数和返回值， 
+}
+这个客制化服务接口，实现， 都是完全给业务方法的使用者调用的
+2. 接口的实现除了要有这个接口方法的实现代码， 作为实现的结构体内部还有两个基本成员，
+第一个client,   对于micro，  服务方法的提供者 和使用者都是客户端， 
+所以这里有个client,  
+micro就想一个港口，  
+服务方法提供者， 抽象出service, 要有自己的名字， 所以第二个成员是name, 
+type userService struct {
+	c    client.Client
+	name string
+}
+说服务方法， 
+func (c *userService) Hello(ctx context.Context, in *Request, opts ...client.CallOption) (*Response, error) {
+	req := c.c.NewRequest(c.name, "User.Hello", in)
+	out := new(Response)
+	err := c.c.Call(ctx, req, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+这个服务的方法代码分两部分， 一是框架部分， 一是业务部分
+框架部分， 包括请求的构造， 响应的构造，  调用业务方法， 业务传来的是一个方法名字符串， 
+要通过这个方法字符串反射得到这个方法体。 
+外部程序， 把方法名字符串传进来就行， 实际是把方法业务实现塞进来， 和里面的框架代码结合， 变成一个真正的方法执行体， 这种方式叫做依赖注入， 真正的业务， 就是服务的依赖， 框架准别好， 把这个依赖 注入进来， 就变成了一个真正有业务的服务 ，而不是一个空的框架， 有点像回调， 但回调需要框架把业务的接口固定， 作为一个框架， 要接受各种各样的业务业务函数， 函数有不同的参数， 所以传给框的只能是业务函数名字符串， 而不是函数体， 就是为了通用型， 这种方式就叫成了依赖注入， 区别于回调， 
+c.c得到服务的客户端， NewRequest 构造出适合于rpc的请求结构体
+out := new(Response) 准好好响应的地方， 这是存放函数输出结果的地方， 
+
+3. new服务对象, 
+有接口， 有实现， 还需要一个new的方法， 供外部业务程序调用
+这个方法不属于结构体实现部分， 这个new方法是要返回一个结构体实现对象
+所以他不属于结构体对象本身， 
+属于包的， 调用的时候都是包名.new方法出来一个结构体对象， 
+这些都是通用的写法， 
+服务结构， 服务结构体， new服务方法， 
+new的任务就是返回一创建好的服务结构体对象， 
+基本是围绕， 把结构体力的成员赋值好， 
+具体是client， 和name都赋值好， 
+这个new是供外部调用的， 所以以大写开头
+里面外部传入来的参数， 基本外部程序简化到比较好的水平， 让业务程序简化到无可监护的地步
+结构体对象没传进来， 是nil, 但是可以调用结构体实现的方法， 所以这里外部程序没有传入microcliene是可以的， 
+func NewUserService(name string, c client.Client) UserService {
+	if c == nil {
+		c = client.NewClient()
+	}
+	if len(name) == 0 {
+		name = "user"
+	}
+	return &userService{
+		c:    c,
+		name: name,
+	}
+}
+newAAAService的命名， AAA是一个业务的名字， 这里的user表示针对用户的业务， 可以用户注册， 登录等服务方法都隶属于这个serive, 可以proto定义好这些方法的接口， 一个业务里包含多个方法， 一个业务有一个单独的micro客户端， 
+到目前为止， 方法接口的形式有，1 直接在代码的interface声明， 2 在aidl配置文件中定义，android 里用的 3 在 proto文件里定义， 
+后两者生成接口代码文件和响应的带有框架代码的实现代码， 外部业务程序向这些实现代码里注入依赖
+到此三部曲完成了， 这三部曲完成了业务方法使用者需要的， 看看业务方法使用如何调用这些生成代码：
+	service := micro.NewService(micro.Name("user.client"))
+	service.Init()
+服务对象创建， 和初始化， 两句代码， 就完成了一个服务的部署， 注意这个newService并不是生成的框架代码， 
+可谓是简化之极， 没有再简化的空间， 
+而且透明化， 不像其他语言封装成库， 透明化可以利于理解代码， 好理解了， 也就更利于程序的维护， 要知道成熟的软件产品，是长期维护长期升级的， 据说70%时间在维护和升级
+极致的简化， 加透明的简化， 成就简化完美
+业务方法的提供者， 和业务方法的使用者， 
+都要创建一个mciro的服务,   
+1. 业务方法的使用者从这个mciro服务里获取到方法
+2. 业务方法的提供者向这个micro服务注入业务方法，
+现在说的业务方法的使用者， 继续看
+	user := proto.NewUserService("user", service.Client())
+ proto.NewUserService 创建了一个专门给业务使用者的服务， 这个服务是根据业务定制生成的，这个客制化的服务完成远程方法的调用， 这个客制化的服务不同于上面的micro服务， micro服务是标准的。 不是定制的。 
+业务的使用者是对应micro服务的客户端，  需要用这个客户端构造出这个客制化的服务。 
+	res, err := user.Hello(context.TODO(), &proto.Request{Name: "World ^_^"})
+rpc方法调用时，方法的参数要包装成proto.Request格式的，参数已经演变为消息，所以在生成时， 用message命名，这个消息结构体的成员有：
+type Request struct {
+	Name                 string   `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+和10个方法 ，分别是：
+消息置空， 字符串， 描述符， 解码方法， 编码方法， 将其他消息合并到本消息， 消息大小， 消息丢弃，消息名字。 
+在说方法的返回值， 完全是在proto生成文件的service接口规定好的， 
+type UserService interface {
+	Hello(ctx context.Context, in *Request, opts ...client.CallOption) (*Response, error)  规定了业务方法的使用者在调用这个方法参数和返回值， 
+}
+
+好了以上部分是业务使用者需要的生成代码， 和业务使用者调用生成代码的格式，  下面讲解业务提供者的生成代码， 和调用格式
+---------------------------------------------------------------------------------------------------------------------------------------------------------
+
+作为业务提供者也是和业务使用者也是同样的创建好一个micro服务对象。 
+	service := micro.NewService(
+		micro.Name("user"),
+	)
+
+	service.Init()
+
+服务准备好了， 业务方法的提供者就是服务里注入依赖，因为服务需要承载业务，业务是服务所依赖的， 所以 注入业务方法， 就叫做注入依赖。 
+
+ 
+细说1. 定义一个完整的业务结构体和隶属于本业务的方法， 讲解方便， 只列举一个方法， 生产环境，一个业务会有很多方法：
+type User struct{}
+
+func (u *User) Hello(ctx context.Context, req *proto.Request, res *proto.Response) error {
+	res.Msg = "Hello " + req.Name
+	return nil
+}
+准备好了业务，现在就要把业务注入到服务里了：
+proto.RegisterUserHandler(service.Server(), new(User))
+
+细说2.  业务方法的使用者， 就要
+
+
+先看下外部程序如何调用的， 再讲生成的框架代码。
+外部调用：
+
+
+
+
+
+
+
