@@ -1,0 +1,12 @@
+#！/bin/bash 
+filePath="/home/lwx838779/nick/out/empty/i"
+sourceString="plaintext"
+destString=`ifconfig eth0|grep 'inet addr'|cut -d ":" -f2 | cut -d " " -f1`
+echo 'local ip='$destString
+# s="s/${sourceString}/${destString}/g"
+s="$sourceString $destString"
+echo $s
+c="$filePath $sourceString"
+echo $c
+#echo $sourceString
+# sed  $filePath
