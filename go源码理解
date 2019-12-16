@@ -110,8 +110,8 @@ func deferproc(siz int32, fn *funcval) { // arguments of fn follow fn
 把fn出入到goroutine链表里
 在函数return前， 调用
 func deferreturn(arg0 uintptr) {
-把fn从goountine从链表里取出来， 然后执行。  所以defer多出来的调用不是一个call语句。 
-defer 会拷贝参数， 还有一些延迟， 网上有测试， 单纯一个defer， 里面什么都不做， 也要增加耗时20ns. 所以defer比较耗时
+把fn从goountine从链表里取出来， 然后执行。  所以defer多出来的调用不仅仅是一个call语句。 
+defer 会拷贝参数， 还有一些延迟， 网上有测试， 单纯一个defer， 里面什么都不做， 也要增加耗时20ns. 所以defer非常耗时
 defer的用法; defer应该只用来捕获panic的处理，其他资源释放等操作，锁释放等操作， 这些都不会引起paniic的，程序有多个退出路径， 都 可以要用goto去做。避免用defer
 
 
@@ -125,7 +125,7 @@ type slice struct {
 	len   int
 	cap   int
 }
-创建 切片：
+创建切片：
 func makeslice(et *_type, len, cap int) slice {
     // 根据切片的数据类型，获取切片的最大容量
     maxElements := maxSliceCap(et.size)
@@ -256,9 +256,10 @@ go语言的切片（slice）是对数组一个连续片段的引用，所以切�
 给定项的切片索引可能比相关数组的相同元素的索引小。和数组不同的是，切片的长度可以在运行时修改，最小为 0 最大为相关数组的长度：切片是一个长度可变的数组。
 
 ------------------------------------------
-g 是goroutine的缩写， 一个main也是也是一个goroutine ,  goroutien包括新建， 恢复， 暂停， 每个g都会放到运行队列里， m会从这个运行队列取出g .  m 只有把g运行完活着g暂停， 才会去队列取下一个队列。 
+g 是goroutine的缩写， 一个main也是一个goroutine ,  goroutine包括新建， 恢复， 暂停， 
+每个g都会放到运行队列里， m会从这个运行队列取出g .  m 只有把g运行完，或者让g暂停， m才会去队列取下一个g。 
 g 的状态有： 
-刚被创建还未被初始化的状态gidle, 
+刚被创建还未被初始化的状态idle, 
 放在运行队列， 还没被m取出的状态runnable
 正在被m运行行的状态running
 系统调用的执行状态syscall， 此时运行该g的m让出p
@@ -271,10 +272,11 @@ m情况分为拥有P的时候，1. 正在从运行队列获取G， 2. 正在运�
 
 
 m是machine的缩写，是运行在机器上的运行实体，目前版本的go来看，一个m就是一个系统线程， m需要一个p来运行g , p代表运行时需要的资源， m运行的代码分为两部分， 一是go代码， 一是系统调用， 
-系统调用会阻塞， 这个m也就阻塞了，这个m就会让出p 给其他的m,  所以m的数量不会是一个，m的数量 不能太多，不能太少
-p是process的缩写，  p是m所独享的资源，在同一个时间点，  一个p只能被一个m使用
+系统调用会阻塞， 这个m也就阻塞了，这个m就会让出p 给其他的m,  所以m的数量不会是一个，m的数量不能太多，不能太少
+p是process的缩写，  p是m所独享的资源，在同一个时间点， 一个p只能被一个m使用
 p的数量决定了可以同时执行的m的数量的最大值。 
-比如p的数量是2， 那么最后又两个m同时运行。  可以有超过两个的m存在， 但最后又两个m同时运行。  因为p只能被一个m使用， m内的goroutine可以共享p资源。 
+比如p的数量是2， 那么最多有两个m同时运行。  可以有超过两个的m存在， 但最多有两个m同时运行。
+因为p只能被一个m使用， m内的goroutine可以共享p资源。 
 P的状态有： 
 P的状态是随m而动的， 
 1. 所有的m都休眠了， p会加入空闲p链表， 此时为空闲状态idle
