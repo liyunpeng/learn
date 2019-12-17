@@ -1,49 +1,38 @@
-master@ubuntu:~/k8s$ top
+看k8s是否在运行， 可以通过查看进程的方式， 可以看到如下5个进程， 表示kube集群在运行
+master@ubuntu:~/k8s$ ps -e | grep kube
+ 21268 ?        00:02:18 kubelet
+ 21714 ?        00:01:21 kube-controller
+ 21720 ?        00:02:46 kube-apiserver
+ 21725 ?        00:00:09 kube-scheduler
+ 22270 ?        00:00:04 kube-proxy
+当然k8s启动的还有etcd进程
+
+用top 命令也可以看到他们
+ master@ubuntu:~/k8s$ top
 top - 20:12:25 up  1:07,  3 users,  load average: 0.45, 0.56, 0.73
 Tasks: 305 total,   1 running, 221 sleeping,   0 stopped,   0 zombie
 %Cpu(s):  0.9 us,  0.9 sy,  0.0 ni, 96.5 id,  1.2 wa,  0.0 hi,  0.5 si,  0.0 st
 KiB Mem :  2013364 total,    80948 free,  1365244 used,   567172 buff/cache
 KiB Swap:        0 total,        0 free,        0 used.   470068 avail Mem
-
    PID USER      PR  NI    VIRT    RES    SHR S  %CPU %MEM     TIME+ COMMAND
  21720 root      20   0  540216 238048  20028 S   3.6 11.8   1:29.06 kube-apiserver
  21683 root      20   0 10.054g  37580   5584 S   3.0  1.9   0:47.20 etcd
  21268 root      20   0 1786188  48632  14512 S   2.3  2.4   1:06.91 kubelet
  21714 root      20   0  217756  49784   8864 S   1.7  2.5   0:41.35 kube-controller
- 24372 root      20   0   49628  16536   4964 S   1.7  0.8   0:45.89 calico-node
-  1602 rabbitmq  20   0 3245984  67732   3184 S   1.0  3.4   0:34.91 beam.smp
- 24888 root      20   0  142796   9680   2260 S   1.0  0.5   0:08.39 coredns
-  1871 root      20   0 1653508  62420   5392 S   0.7  3.1   1:10.66 dockerd
- 68314 master    20   0   51344   4044   3224 R   0.7  0.2   0:00.10 top
-    10 root      20   0       0      0      0 I   0.3  0.0   0:11.70 rcu_sched
- 25108 root      20   0  142796   6840      0 S   0.3  0.3   0:08.42 coredns
- 36168 999       20   0 2166524 386932   8376 S   0.3 19.2   0:08.87 mysqld
- 43377 root      20   0       0      0      0 I   0.3  0.0   0:00.51 kworker/u256:2-
 
- 
-  sudo kubectl get pods -n kube-system
-  424  sudo  kubectl apply -f http://mirror.faasx.com/k8s/calico/v3.3.2/rbac-kdd.yaml
-  425  sudo  kubectl apply -f http://mirror.faasx.com/k8s/calico/v3.3.2/calico.yaml
-  426  sudo kubectl get node
-  427  sudo kubectl taint nodes --all node-role.kubernetes.io/master-
-  428  sudo vim mysql-rc.yaml
-  429  sudo kubectl create -f mysql-rc.yaml
-  430  sudo kubectl get pod
-  431  mysql
-  432  sudo docker ps -a
-  433  cd k8s/
-  434  ls
-  435  rm mysql-svc.yaml
-  436  vi mysql-svc.yaml
-  437  sudo kubectl create -f mysql-svc.yaml
-  438  sudo netstat -anp | grep 33306
-  439  vi mysql-svc.yaml
-  440  sudo kubectl create -f mysql-svc.yaml
-  441  sudo kubectl get pod -o wide
-  442  sudo  docker exec -it f33925781974 /bin/bash
+ -n kube-system表示 kube 是k8s 的缩写，也是kubenates的缩写， kube-system代表了kube系统级的pod,  不属于普通应用的pod, 一般有负责通讯的5个pod
+sudo kubectl get pods -n kube-system
 
-  
-  
+创建线面两个yaml文件指定的Pod后， get node 才会看到状态转为运行状态： 
+kubectl apply -f http://mirror.faasx.com/k8s/calico/v3.3.2/rbac-kdd.yaml
+kubectl apply -f http://mirror.faasx.com/k8s/calico/v3.3.2/calico.yaml
+
+sudo kubectl get node
+
+让pod可以调度到master, 即master允许pod调度他上面： 
+sudo kubectl taint nodes --all node-role.kubernetes.io/master-
+
+yaml的命名规范， kind名字的缩写作为名字的后缀， 如rc 表示replicator controller:
 master@ubuntu:~/k8s$ cat mysql-rc.yaml
 apiVersion: v1
 kind: ReplicationController
@@ -66,6 +55,23 @@ spec:
         env:
         - name: MYSQL_ROOT_PASSWORD
           value: "123456"
+rc是有多个pod副本的集合， 上面的例子表示只有一个pod副本。 
+
+sudo kubectl create -f mysql-rc.yaml 
+create -f 会创建容器， 并启动， 默认会去远程拉去镜像， 如果想使用本地的镜像， 需要用一个参数。  TODO
+
+sudo kubectl get pod 只会获取应用pod， 不会获取系统的pod
+
+sudo kubectl get pod -o wide 可以看到更详细的信息
+
+kube其实是管理docker的， 一个pod里包含着运行在同一个主机上的多个容器, kube虽然以pod为调度单位， 但最终是管理docker容器的
+kube所有启动的docker容器都可以被
+docker ps -a 命令看到
+要想进入某个docekr容器的交互模式， 可以用docker ps -a 找到这个docker容器的id, 然后用docker -it bin/bash命令进入这个容器的交互模式： 
+如docker ps -a  找到了名为mysql的容器的id, 那么进入容器的交互： 
+sudo  docker exec -it f33925781974 /bin/bash
+
+svc是service的缩写，按规范命名， 服务名-rc.yaml里面的kind字段必定是Service
 master@ubuntu:~/k8s$ cat mysql-svc.yaml
 apiVersion: v1
 kind: Service
@@ -84,74 +90,19 @@ spec:
   selector:
     name: mysql-pod
 
-	
-	看k8s是否在运行
-	master@ubuntu:~/k8s$ ps -e | grep kube
- 21268 ?        00:02:18 kubelet
- 21714 ?        00:01:21 kube-controller
- 21720 ?        00:02:46 kube-apiserver
- 21725 ?        00:00:09 kube-scheduler
- 22270 ?        00:00:04 kube-proxy
-
- 
- 
+虽然是应用服务， 但是用kubectl get pod ， 是看不到service的， pod和serrvice 是不同的实体， 还有persistvolume, 要用kubectl get pv来看。 
 master@ubuntu:~/k8s$ kubectl get svc
 NAME         TYPE        CLUSTER-IP     EXTERNAL-IP   PORT(S)          AGE
 kubernetes   ClusterIP   10.96.0.1      <none>        443/TCP          155m
 mysql-svc    NodePort    10.98.128.12   <none>        3306:32766/TCP   137m
-master@ubuntu:~/k8s$ kubectl edit svc/mysql-svc
+ targetPort: 设置的3306是kube集群内部的端口，  集群外部是访问不到的， 
+nodePort: 32766 才是外部可以访问的端口， 以实验的例子句子
+虚拟机运行ubuntu, ubuntu运行kube集群， windows访问kube集群里的mysql这个服务， 用的命令为：
+mysql -h 192.168.236.136 -P 32766 -u root -p 1223456
+即可访问到mysql服务
 
-
-====================================================================
-ubuntu 安装NFS
-1、sudo apt-get install nfs-kernel-server
-
-2、打开配置：vi /etc/exports
-
-3、exports的最后一行加入/data/fileshare   *(rw,sync,no_subtree_check,no_root_squash)这句话，保存退出
-
-4、mkdir -p   /data/fileshare
-
-5、sudo /etc/init.d/rpcbind restart      
-
-（nfs是一个RPC程序，第一步安装成功后，使用它时需要映射提前映射好端口，映射端口，
-
- 
-
-通过rpcbind 设定）
-
- 
-
-6、重启nfs服务   sudo /etc/init.d/nfs-kernel-server restart 
-
- 
-
-==============
-
- 
-
-挂载上面的共享
-
-vi /etc/fstab添加
-
-192.168.22.22:/data/fileshare /data/fileshare               nfs    rw,tcp,soft  0  0
-
-保存
-
- 
-
-执行mount -a
-
- 
-
-取消挂载  umount   /data/fileshare  
-
-
-master@ubuntu:~/k8s$ sudo exportfs -a
-exportfs: Failed to stat /data/fileshare: Stale file handle
-master@ubuntu:~/k8s$ df -h
-
-
-master@ubuntu:~/k8s$ kubectl edit svc/mysql-svc
- 
- 改了端口， 可以马上生效
+对外服务的端口可以通过 kubectl edit即时改变， 如
+master@ubuntu:~/k8s$ kubectl edit svc/mysql-svc 进入编辑模式， 
+把nodePort: 32766改为nodePort: 30000，外部可以访问的端口就变为30000， 
+mysql -h 192.168.236.136 -P 32766 -u root -p 1223456
+亲测有效。 
