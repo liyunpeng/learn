@@ -1,0 +1,157 @@
+master@ubuntu:~/k8s$ top
+top - 20:12:25 up  1:07,  3 users,  load average: 0.45, 0.56, 0.73
+Tasks: 305 total,   1 running, 221 sleeping,   0 stopped,   0 zombie
+%Cpu(s):  0.9 us,  0.9 sy,  0.0 ni, 96.5 id,  1.2 wa,  0.0 hi,  0.5 si,  0.0 st
+KiB Mem :  2013364 total,    80948 free,  1365244 used,   567172 buff/cache
+KiB Swap:        0 total,        0 free,        0 used.   470068 avail Mem
+
+   PID USER      PR  NI    VIRT    RES    SHR S  %CPU %MEM     TIME+ COMMAND
+ 21720 root      20   0  540216 238048  20028 S   3.6 11.8   1:29.06 kube-apiserver
+ 21683 root      20   0 10.054g  37580   5584 S   3.0  1.9   0:47.20 etcd
+ 21268 root      20   0 1786188  48632  14512 S   2.3  2.4   1:06.91 kubelet
+ 21714 root      20   0  217756  49784   8864 S   1.7  2.5   0:41.35 kube-controller
+ 24372 root      20   0   49628  16536   4964 S   1.7  0.8   0:45.89 calico-node
+  1602 rabbitmq  20   0 3245984  67732   3184 S   1.0  3.4   0:34.91 beam.smp
+ 24888 root      20   0  142796   9680   2260 S   1.0  0.5   0:08.39 coredns
+  1871 root      20   0 1653508  62420   5392 S   0.7  3.1   1:10.66 dockerd
+ 68314 master    20   0   51344   4044   3224 R   0.7  0.2   0:00.10 top
+    10 root      20   0       0      0      0 I   0.3  0.0   0:11.70 rcu_sched
+ 25108 root      20   0  142796   6840      0 S   0.3  0.3   0:08.42 coredns
+ 36168 999       20   0 2166524 386932   8376 S   0.3 19.2   0:08.87 mysqld
+ 43377 root      20   0       0      0      0 I   0.3  0.0   0:00.51 kworker/u256:2-
+
+ 
+  sudo kubectl get pods -n kube-system
+  424  sudo  kubectl apply -f http://mirror.faasx.com/k8s/calico/v3.3.2/rbac-kdd.yaml
+  425  sudo  kubectl apply -f http://mirror.faasx.com/k8s/calico/v3.3.2/calico.yaml
+  426  sudo kubectl get node
+  427  sudo kubectl taint nodes --all node-role.kubernetes.io/master-
+  428  sudo vim mysql-rc.yaml
+  429  sudo kubectl create -f mysql-rc.yaml
+  430  sudo kubectl get pod
+  431  mysql
+  432  sudo docker ps -a
+  433  cd k8s/
+  434  ls
+  435  rm mysql-svc.yaml
+  436  vi mysql-svc.yaml
+  437  sudo kubectl create -f mysql-svc.yaml
+  438  sudo netstat -anp | grep 33306
+  439  vi mysql-svc.yaml
+  440  sudo kubectl create -f mysql-svc.yaml
+  441  sudo kubectl get pod -o wide
+  442  sudo  docker exec -it f33925781974 /bin/bash
+
+  
+  
+master@ubuntu:~/k8s$ cat mysql-rc.yaml
+apiVersion: v1
+kind: ReplicationController
+metadata:
+  name: mysql
+spec:
+  replicas: 1
+  selector:
+    app: mysql
+  template:
+    metadata:
+      labels:
+        app: mysql
+    spec:
+      containers:
+      - name: mysql
+        image: mysql
+        ports:
+        - containerPort: 3306
+        env:
+        - name: MYSQL_ROOT_PASSWORD
+          value: "123456"
+master@ubuntu:~/k8s$ cat mysql-svc.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql-svc
+  labels:
+    name: mysql-svc
+spec:
+  type: NodePort
+  ports:
+  - port: 3306
+    protocol: TCP
+    targetPort: 3306
+    name: http
+    nodePort: 32766
+  selector:
+    name: mysql-pod
+
+	
+	看k8s是否在运行
+	master@ubuntu:~/k8s$ ps -e | grep kube
+ 21268 ?        00:02:18 kubelet
+ 21714 ?        00:01:21 kube-controller
+ 21720 ?        00:02:46 kube-apiserver
+ 21725 ?        00:00:09 kube-scheduler
+ 22270 ?        00:00:04 kube-proxy
+
+ 
+ 
+master@ubuntu:~/k8s$ kubectl get svc
+NAME         TYPE        CLUSTER-IP     EXTERNAL-IP   PORT(S)          AGE
+kubernetes   ClusterIP   10.96.0.1      <none>        443/TCP          155m
+mysql-svc    NodePort    10.98.128.12   <none>        3306:32766/TCP   137m
+master@ubuntu:~/k8s$ kubectl edit svc/mysql-svc
+
+
+====================================================================
+ubuntu 安装NFS
+1、sudo apt-get install nfs-kernel-server
+
+2、打开配置：vi /etc/exports
+
+3、exports的最后一行加入/data/fileshare   *(rw,sync,no_subtree_check,no_root_squash)这句话，保存退出
+
+4、mkdir -p   /data/fileshare
+
+5、sudo /etc/init.d/rpcbind restart      
+
+（nfs是一个RPC程序，第一步安装成功后，使用它时需要映射提前映射好端口，映射端口，
+
+ 
+
+通过rpcbind 设定）
+
+ 
+
+6、重启nfs服务   sudo /etc/init.d/nfs-kernel-server restart 
+
+ 
+
+==============
+
+ 
+
+挂载上面的共享
+
+vi /etc/fstab添加
+
+192.168.22.22:/data/fileshare /data/fileshare               nfs    rw,tcp,soft  0  0
+
+保存
+
+ 
+
+执行mount -a
+
+ 
+
+取消挂载  umount   /data/fileshare  
+
+
+master@ubuntu:~/k8s$ sudo exportfs -a
+exportfs: Failed to stat /data/fileshare: Stale file handle
+master@ubuntu:~/k8s$ df -h
+
+
+master@ubuntu:~/k8s$ kubectl edit svc/mysql-svc
+ 
+ 改了端口， 可以马上生效
