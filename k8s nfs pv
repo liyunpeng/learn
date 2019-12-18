@@ -1,0 +1,161 @@
+master@ubuntu:~$ sudo service portmap restart
+[sudo] password for master:
+master@ubuntu:~$  sudo service nfs-kernel-server restart
+master@ubuntu:~$ sudo kubectl get kv
+error: the server doesn't have a resource type "kv"
+master@ubuntu:~$ sudo kubectl get pv
+NAME              CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS      CLAIM   STORAGECLASS   REASON   AGE
+mysql-pv-volume   10Gi       RWO            Retain           Available                                   24h
+master@ubuntu:~$ sudo kubectl get pod
+NAME                    READY   STATUS    RESTARTS   AGE
+mysql-c96c75fdb-lpdd6   0/1     Pending   0          4m41s
+mysql-rc-kblqb          1/1     Running   1          26h
+master@ubuntu:~$ sudo kubectl delete pv mysql-pv-volume
+persistentvolume "mysql-pv-volume" deleted
+master@ubuntu:~$ sudo kubectl get pv
+No resources found.
+master@ubuntu:~$ sudo kubectl get pod
+NAME                    READY   STATUS    RESTARTS   AGE
+mysql-c96c75fdb-lpdd6   0/1     Pending   0          6m52s
+mysql-rc-kblqb          1/1     Running   1          27h
+
+master@ubuntu:~/k8s/pv$ kubectl get pod
+NAME                    READY   STATUS    RESTARTS   AGE
+httpd-pvpod             1/1     Running   0          4m41s
+mysql-c96c75fdb-lpdd6   0/1     Pending   0          21m
+mysql-rc-kblqb          1/1     Running   1          27h
+master@ubuntu:~/k8s/pv$ kubectl get pod^C
+master@ubuntu:~/k8s/pv$ kubectl describe pod httpd-pvpod
+Name:         httpd-pvpod
+Namespace:    default
+Priority:     0
+Node:         ubuntu/192.168.233.136
+Start Time:   Tue, 17 Dec 2019 22:53:09 -0800
+Labels:       <none>
+Annotations:  cni.projectcalico.org/podIP: 192.169.0.15/32
+Status:       Running
+IP:           192.169.0.15
+Containers:
+  httpd-withpvc-pod:
+    Container ID:   docker://c9adc0863e7f47762fd568ac5bb5450a67f0595bee5ac6ff957d416a1d9f6ce9
+    Image:          httpd
+    Image ID:       docker-pullable://httpd@sha256:ac6594daaa934c4c6ba66c562e96f2fb12f871415a9b7117724c52687080d35d
+    Port:           <none>
+    Host Port:      <none>
+    State:          Running
+      Started:      Tue, 17 Dec 2019 22:55:55 -0800
+    Ready:          True
+    Restart Count:  0
+    Environment:    <none>
+    Mounts:
+      /usr/local/apache2/htdocs/ from httpd-volume (rw)
+      /var/run/secrets/kubernetes.io/serviceaccount from default-token-d4jjf (ro)
+Conditions:
+  Type              Status
+  Initialized       True
+  Ready             True
+  ContainersReady   True
+  PodScheduled      True
+Volumes:
+  httpd-volume:
+    Type:       PersistentVolumeClaim (a reference to a PersistentVolumeClaim in the same namespace)
+    ClaimName:  myclaim
+    ReadOnly:   false
+  default-token-d4jjf:
+    Type:        Secret (a volume populated by a Secret)
+    SecretName:  default-token-d4jjf
+    Optional:    false
+QoS Class:       BestEffort
+Node-Selectors:  <none>
+Tolerations:     node.kubernetes.io/not-ready:NoExecute for 300s
+                 node.kubernetes.io/unreachable:NoExecute for 300s
+Events:
+  Type    Reason     Age    From               Message
+  ----    ------     ----   ----               -------
+  Normal  Scheduled  5m30s  default-scheduler  Successfully assigned default/httpd-pvpod to ubuntu
+  Normal  Pulling    5m28s  kubelet, ubuntu    Pulling image "httpd"
+  Normal  Pulled     2m45s  kubelet, ubuntu    Successfully pulled image "httpd"
+  Normal  Created    2m45s  kubelet, ubuntu    Created container httpd-withpvc-pod
+  Normal  Started    2m44s  kubelet, ubuntu    Started container httpd-withpvc-pod
+master@ubuntu:~/k8s/pv$ kubectl exec -it httpd-pvpod bash
+root@httpd-pvpod:/usr/local/apache2# ls
+bin  build  cgi-bin  conf  error  htdocs  icons  include  logs  modules
+root@httpd-pvpod:/usr/local/apache2# ls /usr/local/apache2/htdocs/
+aaa  fffffffffffffffffff
+root@httpd-pvpod:/usr/local/apache2#
+
+
+
+master@ubuntu:/nfsroot$ touch aaa
+master@ubuntu:/nfsroot$ cd /mnt/a/
+master@ubuntu:/mnt/a$ ls
+aaa
+master@ubuntu:/mnt/a$ touch /nfsroot/fffffffffffffffffff
+master@ubuntu:/mnt/a$ ls
+aaa  fffffffffffffffffff
+master@ubuntu:/mnt/a$ cd /nfsroot/
+master@ubuntu:/nfsroot$ ls
+aaa  fffffffffffffffffff
+master@ubuntu:/nfsroot$ cat /usr/local/apache2/htdocs/^C
+master@ubuntu:/nfsroot$ echo "test file" > 1.html
+master@ubuntu:/nfsroot$ kubectl get pod httpd-pvpod -o wide
+\NAME          READY   STATUS    RESTARTS   AGE    IP             NODE     NOMINATED NODE   READINESS GATES
+httpd-pvpod   1/1     Running   0          8m2s   192.169.0.15   ubuntu   <none>           <none>
+master@ubuntu:/nfsroot$ curl 192.169.0.15/1.html
+test file
+
+
+master@ubuntu:~/k8s/pv$ kubectl exec -it httpd-pvpod bash
+root@httpd-pvpod:/usr/local/apache2# ls
+bin  build  cgi-bin  conf  error  htdocs  icons  include  logs  modules
+root@httpd-pvpod:/usr/local/apache2# ls /usr/local/apache2/htdocs/
+aaa  fffffffffffffffffff
+root@httpd-pvpod:/usr/local/apache2# ^C
+root@httpd-pvpod:/usr/local/apache2# command terminated with exit code 137
+
+
+
+master@ubuntu:/nfsroot$ kubectl delete pod httpd-pvpod
+pod "httpd-pvpod" deleted
+master@ubuntu:/nfsroot$ kubectl get pod
+NAME                    READY   STATUS    RESTARTS   AGE
+mysql-c96c75fdb-lpdd6   0/1     Pending   0          27m
+mysql-rc-kblqb          1/1     Running   1          27h
+
+
+aster@ubuntu:~/k8s/pv$ kubectl create -f pvpod.yaml
+pod/httpd-pvpod created
+master@ubuntu:~/k8s/pv$ kubectl get pv
+NAME    CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS   CLAIM             STORAGECLASS   REASON   AGE
+pv001   5Gi        RWX            Retain           Bound    default/myclaim                           13m
+master@ubuntu:~/k8s/pv$ kubectl create -f pvpod.yaml
+Error from server (AlreadyExists): error when creating "pvpod.yaml": pods "httpd-pvpod" already exists
+master@ubuntu:~/k8s/pv$ kubectl create -f pvpod.yaml^C
+master@ubuntu:~/k8s/pv$ kubectl delete pod httpd-pvpod
+pod "httpd-pvpod" deleted
+master@ubuntu:~/k8s/pv$ kubectl get pv
+NAME    CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS   CLAIM             STORAGECLASS   REASON   AGE
+pv001   5Gi        RWX            Retain           Bound    default/myclaim                           13m
+master@ubuntu:~/k8s/pv$ kubectl get pv
+NAME    CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS   CLAIM             STORAGECLASS   REASON   AGE
+pv001   5Gi        RWX            Retain           Bound    default/myclaim                           13m
+master@ubuntu:~/k8s/pv$ kubectl create -f pvpod.yaml
+pod/httpd-pvpod created
+
+
+master@ubuntu:~/k8s/pv$ kubectl create -f pvpod.yaml
+pod/httpd-pvpod created
+master@ubuntu:~/k8s/pv$ kubectl get pod
+NAME                    READY   STATUS    RESTARTS   AGE
+httpd-pvpod             1/1     Running   0          18s
+mysql-c96c75fdb-lpdd6   0/1     Pending   0          31m
+mysql-rc-kblqb          1/1     Running   1          27h
+
+
+master@ubuntu:~/k8s/pv$ kubectl get pod -o wide
+NAME                    READY   STATUS    RESTARTS   AGE   IP             NODE     NOMINATED NODE   READINESS GATES
+httpd-pvpod             1/1     Running   0          40s   192.169.0.18   ubuntu   <none>           <none>
+mysql-c96c75fdb-lpdd6   0/1     Pending   0          31m   <none>         <none>   <none>           <none>
+mysql-rc-kblqb          1/1     Running   1          27h   192.169.0.14   ubuntu   <none>           <none>
+master@ubuntu:~/k8s/pv$ curl 192.169.0.18/1.html
+test file
