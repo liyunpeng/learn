@@ -1,30 +1,76 @@
-master@ubuntu:~$ sudo service portmap restart
-[sudo] password for master:
-master@ubuntu:~$  sudo service nfs-kernel-server restart
-master@ubuntu:~$ sudo kubectl get kv
-error: the server doesn't have a resource type "kv"
-master@ubuntu:~$ sudo kubectl get pv
-NAME              CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS      CLAIM   STORAGECLASS   REASON   AGE
-mysql-pv-volume   10Gi       RWO            Retain           Available                                   24h
-master@ubuntu:~$ sudo kubectl get pod
-NAME                    READY   STATUS    RESTARTS   AGE
-mysql-c96c75fdb-lpdd6   0/1     Pending   0          4m41s
-mysql-rc-kblqb          1/1     Running   1          26h
+k8s的pv持久化卷，是依赖于网络文件系统的， 
+pod里运行一般有redis, kafka,  数据库， 基本都需要把数据存到硬盘上， 为叙述方便， 简称为数据落盘， 在k8s系统中， pod数据落盘， 不一定就在pod所在的主机的硬盘上， 
+k8s有专门存储方案， 这就持久化卷， 在需要罗盘的pod里， 可以通过两个确定落盘， 
+一个是指定好挂载点字段：
+volumeMounts:                           #挂载到容器内部的存储卷配置
+    - mountPath: "/usr/local/apache2/htdocs/"
+一个是指定好用哪个持久化卷clain：
+  volumes:
+      persistentVolumeClaim:
+        claimName: myclaim
+pod 运行需要cpu, 内存， 持久化资源 ， 
+有专门持久化卷资源的文件， 即创建一个pv存储资源：
+[root@master ~]# vim mypv.yaml
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pv001
+spec:
+  capacity:
+    storage: 10Gi
+  accessModes:
+    - ReadWriteMany                 #读写权限，允许被多个Node挂载
+  nfs:
+    path: /data/k8s
+    server: 192.168.30.150              #指定nfs路径
+pv存储资源 需要k8s所在的操作系统， 安装好网络文件系统nfs, 
+网络文件系统是可以网络间可以访问的文件系统， 
+通过将此指定ip的网络文件系统过载到本地的一个目录， 就可以在这个网络文件系统读写数据。 如：
+mount 192.168.233.136:/nfsroot /mnt/a
+即可将192.168.233.136这台主机上的网络系统挂在到本地的/mnt/a 这个目录。  
+pv.yaml文件， 需要指定nfs所在的主机的ip192.168.30.150  和 在这个主机上的网络文件系统的位置路径/data/k8s
+这个pv存储资源创建好了
+但是作为使用者pod， 是不能直接使用这个资源的。 
+pod使用的是pv资源 的claim.  
+claim也是需要yaml创建的， 依赖于pv资源：
+apiVersion: v1
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: myclaim
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 8Gi
+这就创建了名为myclaim的pv资源claim, 
+pod通过这个claim名字， 就可以使用pv资源存储了、
+
+道理就讲到这， 下面列出操作步骤：
+ 搭建nfs
+
+
+k8s Pv的使用：
+1. 创建pv存储资源;
+
+pv可以快速创建和删除：
 master@ubuntu:~$ sudo kubectl delete pv mysql-pv-volume
 persistentvolume "mysql-pv-volume" deleted
 master@ubuntu:~$ sudo kubectl get pv
 No resources found.
-master@ubuntu:~$ sudo kubectl get pod
-NAME                    READY   STATUS    RESTARTS   AGE
-mysql-c96c75fdb-lpdd6   0/1     Pending   0          6m52s
-mysql-rc-kblqb          1/1     Running   1          27h
 
-master@ubuntu:~/k8s/pv$ kubectl get pod
-NAME                    READY   STATUS    RESTARTS   AGE
-httpd-pvpod             1/1     Running   0          4m41s
-mysql-c96c75fdb-lpdd6   0/1     Pending   0          21m
-mysql-rc-kblqb          1/1     Running   1          27h
-master@ubuntu:~/k8s/pv$ kubectl get pod^C
+
+2. 创建pv存储资源的claim
+
+创建了claim后， pv资源才会显示绑定状态，表示可以被使用
+master@ubuntu:~/k8s/pv$ kubectl get pv
+NAME    CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS   CLAIM             STORAGECLASS   REASON   AGE
+pv001   5Gi        RWX            Retain           Bound    default/myclaim                           13m
+
+3. 创建使用pv claim的pod:
+
+查看状态：
 master@ubuntu:~/k8s/pv$ kubectl describe pod httpd-pvpod
 Name:         httpd-pvpod
 Namespace:    default
@@ -77,6 +123,64 @@ Events:
   Normal  Pulled     2m45s  kubelet, ubuntu    Successfully pulled image "httpd"
   Normal  Created    2m45s  kubelet, ubuntu    Created container httpd-withpvc-pod
   Normal  Started    2m44s  kubelet, ubuntu    Started container httpd-withpvc-pod
+
+
+4. 测试;
+一个终端向作为pv资源的网络文件系统中写文件
+master@ubuntu:/nfsroot$ echo "test file" > 1.html
+
+测试1， 到挂载点目录看：
+另一个终端进到pod里的docker的交互， 看挂载了pv资源的目录有没有这个1.html文件
+master@ubuntu:~/k8s/pv$ kubectl exec -it httpd-pvpod bash
+root@httpd-pvpod:/usr/local/apache2# ls
+bin  build  cgi-bin  conf  error  htdocs  icons  include  logs  modules
+root@httpd-pvpod:/usr/local/apache2# ls /usr/local/apache2/htdocs/
+1.html
+
+root@httpd-pvpod:/usr/local/apache2# command terminated with exit code 137
+
+测试2： 通过对 httpd服务访问有无此文件：
+-o wide 查看pod的对外服务ip
+master@ubuntu:/nfsroot$ kubectl get pod httpd-pvpod -o wide
+\NAME          READY   STATUS    RESTARTS   AGE    IP             NODE     NOMINATED NODE   READINESS GATES
+httpd-pvpod   1/1     Running   0          8m2s   192.169.0.15   ubuntu   <none>           <none>
+外部访问ip: 
+master@ubuntu:/nfsroot$ curl 192.169.0.15/1.html
+test file
+
+
+
+
+
+
+
+
+所以pod
+master@ubuntu:~$ sudo service portmap restart
+[sudo] password for master:
+master@ubuntu:~$  sudo service nfs-kernel-server restart
+master@ubuntu:~$ sudo kubectl get kv
+error: the server doesn't have a resource type "kv"
+master@ubuntu:~$ sudo kubectl get pv
+NAME              CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS      CLAIM   STORAGECLASS   REASON   AGE
+mysql-pv-volume   10Gi       RWO            Retain           Available                                   24h
+master@ubuntu:~$ sudo kubectl get pod
+NAME                    READY   STATUS    RESTARTS   AGE
+mysql-c96c75fdb-lpdd6   0/1     Pending   0          4m41s
+mysql-rc-kblqb          1/1     Running   1          26h
+
+master@ubuntu:~$ sudo kubectl get pod
+NAME                    READY   STATUS    RESTARTS   AGE
+mysql-c96c75fdb-lpdd6   0/1     Pending   0          6m52s
+mysql-rc-kblqb          1/1     Running   1          27h
+
+master@ubuntu:~/k8s/pv$ kubectl get pod
+NAME                    READY   STATUS    RESTARTS   AGE
+httpd-pvpod             1/1     Running   0          4m41s
+mysql-c96c75fdb-lpdd6   0/1     Pending   0          21m
+mysql-rc-kblqb          1/1     Running   1          27h
+master@ubuntu:~/k8s/pv$ kubectl get pod^C
+
 master@ubuntu:~/k8s/pv$ kubectl exec -it httpd-pvpod bash
 root@httpd-pvpod:/usr/local/apache2# ls
 bin  build  cgi-bin  conf  error  htdocs  icons  include  logs  modules
@@ -97,34 +201,26 @@ master@ubuntu:/mnt/a$ cd /nfsroot/
 master@ubuntu:/nfsroot$ ls
 aaa  fffffffffffffffffff
 master@ubuntu:/nfsroot$ cat /usr/local/apache2/htdocs/^C
-master@ubuntu:/nfsroot$ echo "test file" > 1.html
-master@ubuntu:/nfsroot$ kubectl get pod httpd-pvpod -o wide
-\NAME          READY   STATUS    RESTARTS   AGE    IP             NODE     NOMINATED NODE   READINESS GATES
-httpd-pvpod   1/1     Running   0          8m2s   192.169.0.15   ubuntu   <none>           <none>
-master@ubuntu:/nfsroot$ curl 192.169.0.15/1.html
-test file
-
-
-master@ubuntu:~/k8s/pv$ kubectl exec -it httpd-pvpod bash
-root@httpd-pvpod:/usr/local/apache2# ls
-bin  build  cgi-bin  conf  error  htdocs  icons  include  logs  modules
-root@httpd-pvpod:/usr/local/apache2# ls /usr/local/apache2/htdocs/
-aaa  fffffffffffffffffff
-root@httpd-pvpod:/usr/local/apache2# ^C
-root@httpd-pvpod:/usr/local/apache2# command terminated with exit code 137
 
 
 
-master@ubuntu:/nfsroot$ kubectl delete pod httpd-pvpod
-pod "httpd-pvpod" deleted
 master@ubuntu:/nfsroot$ kubectl get pod
 NAME                    READY   STATUS    RESTARTS   AGE
 mysql-c96c75fdb-lpdd6   0/1     Pending   0          27m
 mysql-rc-kblqb          1/1     Running   1          27h
 
 
+5. 其他测试
+pod删除后， 再次创建， 会直接变为running， 不会有很长时间的containercreating状态， 可见删除pod，并没有把镜像删除
+master@ubuntu:/nfsroot$ kubectl delete pod httpd-pvpod
+pod "httpd-pvpod" deleted
 aster@ubuntu:~/k8s/pv$ kubectl create -f pvpod.yaml
 pod/httpd-pvpod created
+master@ubuntu:~/k8s/pv$ kubectl get pod
+NAME                    READY   STATUS    RESTARTS   AGE
+httpd-pvpod             1/1     Running   0          18s
+
+
 master@ubuntu:~/k8s/pv$ kubectl get pv
 NAME    CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS   CLAIM             STORAGECLASS   REASON   AGE
 pv001   5Gi        RWX            Retain           Bound    default/myclaim                           13m
@@ -133,9 +229,7 @@ Error from server (AlreadyExists): error when creating "pvpod.yaml": pods "httpd
 master@ubuntu:~/k8s/pv$ kubectl create -f pvpod.yaml^C
 master@ubuntu:~/k8s/pv$ kubectl delete pod httpd-pvpod
 pod "httpd-pvpod" deleted
-master@ubuntu:~/k8s/pv$ kubectl get pv
-NAME    CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS   CLAIM             STORAGECLASS   REASON   AGE
-pv001   5Gi        RWX            Retain           Bound    default/myclaim                           13m
+
 master@ubuntu:~/k8s/pv$ kubectl get pv
 NAME    CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS   CLAIM             STORAGECLASS   REASON   AGE
 pv001   5Gi        RWX            Retain           Bound    default/myclaim                           13m
@@ -145,11 +239,7 @@ pod/httpd-pvpod created
 
 master@ubuntu:~/k8s/pv$ kubectl create -f pvpod.yaml
 pod/httpd-pvpod created
-master@ubuntu:~/k8s/pv$ kubectl get pod
-NAME                    READY   STATUS    RESTARTS   AGE
-httpd-pvpod             1/1     Running   0          18s
-mysql-c96c75fdb-lpdd6   0/1     Pending   0          31m
-mysql-rc-kblqb          1/1     Running   1          27h
+
 
 
 master@ubuntu:~/k8s/pv$ kubectl get pod -o wide
@@ -159,3 +249,11 @@ mysql-c96c75fdb-lpdd6   0/1     Pending   0          31m   <none>         <none>
 mysql-rc-kblqb          1/1     Running   1          27h   192.169.0.14   ubuntu   <none>           <none>
 master@ubuntu:~/k8s/pv$ curl 192.169.0.18/1.html
 test file
+© 2019 GitHub, Inc.
+Terms
+Privacy
+Security
+Status
+Help
+Contact GitHub
+Pricing
