@@ -98,11 +98,11 @@ mysql-svc    NodePort    10.98.128.12   <none>        3306:32766/TCP   137m
  targetPort: 设置的3306是kube集群内部的端口，  集群外部是访问不到的， 
 nodePort: 32766 才是外部可以访问的端口， 以实验的例子句子
 虚拟机运行ubuntu, ubuntu运行kube集群， windows访问kube集群里的mysql这个服务， 用的命令为：
-mysql -h 192.168.236.136 -P 32766 -u root -p 1223456
+mysql -h 192.168.236.136 -P 32766 -u root -
 即可访问到mysql服务
 
 对外服务的端口可以通过 kubectl edit即时改变， 如
 master@ubuntu:~/k8s$ kubectl edit svc/mysql-svc 进入编辑模式， 
 把nodePort: 32766改为nodePort: 30000，外部可以访问的端口就变为30000， 
-mysql -h 192.168.236.136 -P 32766 -u root -p 1223456
+mysql -h 192.168.236.136 -P 32766 -u root -pmysql
 亲测有效。 
