@@ -1,0 +1,41 @@
+master@ubuntu:/etc/kubernetes$ sudo sed -i "s/192.168.233.136/192.168.233.137/g" `sudo grep -rl 192.168.233.136 ./`
+
+
+master@ubuntu:~/.kube$ sudo grep 192.168.233.136 -nr *
+config:5:    server: https://192.168.233.136:6443
+http-cache/77c09610b145d63d6320b271d2782925:6:{"kind":"APIVersions","versions":["v1"],"serverAddressByClientCIDRs":[{"clientCIDR":"0.0.0.0/0","serverAddress":"192.168.233.136:6443"}]}
+
+master@ubuntu:~/.kube$ sudo sed -i "s/192.168.233.136/192.168.233.137/g" `sudo grep -rl 192.168.233.136 ./`
+
+
+master@ubuntu:~/.kube$ sudo grep 192.168.233.137 -nr *
+config:5:    server: https://192.168.233.137:6443
+http-cache/77c09610b145d63d6320b271d2782925:6:{"kind":"APIVersions","versions":["v1"],"serverAddressByClientCIDRs":[{"clientCIDR":"0.0.0.0/0","serverAddress":"192.168.233.137:6443"}]}
+
+
+
+master@ubuntu:~/.kube$ kubectl get node
+Unable to connect to the server: x509: certificate is valid for 10.96.0.1, 192.168.233.136, not 192.168.233.137
+master@ubuntu:~/.kube$
+
+sudo mv /etc/kubernetes/pki/apiserver.key /etc/kubernetes/pki/apiserver.key.old
+sudo mv /etc/kubernetes/pki/apiserver.crt /etc/kubernetes/pki/apiserver.crt.old
+sudo mv /etc/kubernetes/pki/apiserver-kubelet-client.crt /etc/kubernetes/pki/apiserver-kubelet-client.crt.old
+sudo mv /etc/kubernetes/pki/apiserver-kubelet-client.key /etc/kubernetes/pki/apiserver-kubelet-client.key.old
+sudo mv /etc/kubernetes/pki/front-proxy-client.crt /etc/kubernetes/pki/front-proxy-client.crt.old
+sudo mv /etc/kubernetes/pki/front-proxy-client.key /etc/kubernetes/pki/front-proxy-client.key.old
+然后重新生成它们：
+
+sudo kubeadm alpha phase certs apiserver --apiserver-advertise-address 192.168.233.137
+sudo kubeadm alpha phase certs apiserver-kubelet-client
+sudo kubeadm alpha phase certs front-proxy-client
+这里我遇到了个小坑，生成证书时候kubeadm试图去访问dl.k8s.io，然后很不幸的是被墙了（外企的小伙伴可能没有这个问题）。解决方案如下：
+
+vim config.yaml 
+
+sudo rm -f /etc/kubernetes/pki/apiserver*
+sudo rm -f /etc/kubernetes/pki/front-proxy-client.*
+sudo rm -rf /etc/kubernetes/pki/etcd/healthcheck-client.*
+sudo rm -rf /etc/kubernetes/pki/etcd/server.*
+sudo  rm -rf /etc/kubernetes/pki/etcd/peer.*
+
