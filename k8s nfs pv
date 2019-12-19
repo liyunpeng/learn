@@ -83,9 +83,10 @@ spec:
     path: /nfsroot/
     server: 192.168.233.136
 master@ubuntu:~/k8s/pv$ kubectl create -f mypv.yaml
-master@ubuntu:~/k8s/pv$ kubectl  get pv
-NAME    CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS   CLAIM             STORAGECLASS   REASON   AGE
-pv001   5Gi        RWX            Retain           ---    default/myclaim                           3h20m
+master@etcd0:~/k8s/pv$  kubectl  get pv
+NAME    CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS      CLAIM   STORAGECLASS   REASON   AGE
+pv001   5Gi        RWX            Retain           Available                                   5s
+
 
 
 pv可以快速创建和删除：
