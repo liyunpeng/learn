@@ -106,3 +106,47 @@ master@ubuntu:~/k8s$ kubectl edit svc/mysql-svc 进入编辑模式，
 把nodePort: 32766改为nodePort: 30000，外部可以访问的端口就变为30000， 
 mysql -h 192.168.236.136 -P 32766 -u root -pmysql
 亲测有效。 
+
+
+-----------------------------------------------
+所有系统级的服务的管理者命令都是以ctl 为后缀的，
+如sytemctl , kubettl
+第二个参数都是动作名， 如systemctl start , kubectl create 
+第三个参数都是要操作的对象， 对于systemctl , 只操作服务，  对于kubeclt可以操作的比较广泛，可以是pod容器， 也可以是Pv等资源， 可以是configmap配置对象。 也可以是pod的众多管理者， 如rc, deploment, rs,service等。 
+对于被操作的对象都有简写格式， 
+如
+systemctl start  etcd0.service可以简写为
+systemctl start  etcd0
+kubectl get pods 简写为;
+kubectl get po
+kubcctl 有众多的操作对象的简写列表， 可以在k8s权威指南查看
+
+被操作的对象都有自己的描述文件：
+systemctl操作的服务对象，对应的文件， 都放在
+/etc/systemd/system/下面， 文件名都以.service为后缀， 放在这个目录， 以.service后缀，这样才会被systemctl 识别到
+如/etc/systemd/system/etcd0.service
+ kubectl操作的对象的描述文件一律是.yaml格式， 以.yaml文件为后缀，kubectl会首先用kubectl create -f xyz.yaml  创建好对象， 创建的对象的名字是文件里的name指定的。 对象创建好，后面都是按对象的名字来操作和使用对象， 可以直接kubectl 操作对象，如
+kubectl get pod mysql-rc,
+对于资源， 配置这样的对象，一般都是在其他的pod对象的yaml描述文件， 来使用这个对象。 
+如：
+volume :
+     name；pv1
+----------------------------------------------------------------------------------------
+解释pod里的元素：
+资源pv， 配置configmap, 以及service , rc, rs,stateful 等管理者， 都是在围绕pod的。 
+资源和配置被pod使用。 
+
+
+
+
+
+
+开机自启动的打开于关闭
+
+kubectl 命令格式
+configmal 的创建方式
+pod的管理者， rc, depolment, rs, statefulset ， job， 各管理者对pod的部不同的管理用途
+rs 滚动升级
+k8s里的节点指的是一个node， 是一个物理主机
+pod亲和读， pod于node的亲和度，  调度在指定的有ssd硬盘的node上， 
+pod与pod的亲和度  两个pod需要调到同一个节点上， 不能调度在同一个节点上
