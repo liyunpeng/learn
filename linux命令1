@@ -1,0 +1,260 @@
+
+
+看cpu的核数还是用用下面命令：
+lwx838779@lfgphicprd19011:~/nick$  cat /proc/cpuinfo |grep "model name" && cat /proc/cpuinfo |grep "physical id"
+model name      : Intel(R) Xeon(R) CPU E5-2690 v2 @ 3.00GHz
+model name      : Intel(R) Xeon(R) CPU E5-2690 v2 @ 3.00GHz
+model name      : Intel(R) Xeon(R) CPU E5-2690 v2 @ 3.00GHz
+model name      : Intel(R) Xeon(R) CPU E5-2690 v2 @ 3.00GHz
+model name      : Intel(R) Xeon(R) CPU E5-2690 v2 @ 3.00GHz
+model name      : Intel(R) Xeon(R) CPU E5-2690 v2 @ 3.00GHz
+model name      : Intel(R) Xeon(R) CPU E5-2690 v2 @ 3.00GHz
+model name      : Intel(R) Xeon(R) CPU E5-2690 v2 @ 3.00GHz
+model name      : Intel(R) Xeon(R) CPU E5-2690 v2 @ 3.00GHz
+model name      : Intel(R) Xeon(R) CPU E5-2690 v2 @ 3.00GHz
+model name      : Intel(R) Xeon(R) CPU E5-2690 v2 @ 3.00GHz
+model name      : Intel(R) Xeon(R) CPU E5-2690 v2 @ 3.00GHz
+model name      : Intel(R) Xeon(R) CPU E5-2690 v2 @ 3.00GHz
+model name      : Intel(R) Xeon(R) CPU E5-2690 v2 @ 3.00GHz
+model name      : Intel(R) Xeon(R) CPU E5-2690 v2 @ 3.00GHz
+model name      : Intel(R) Xeon(R) CPU E5-2690 v2 @ 3.00GHz
+physical id     : 0
+physical id     : 0
+physical id     : 0
+physical id     : 0
+physical id     : 0
+physical id     : 0
+physical id     : 0
+physical id     : 0
+physical id     : 0
+physical id     : 0
+physical id     : 0
+physical id     : 0
+physical id     : 0
+physical id     : 0
+physical id     : 0
+physical id     : 0
+Linux下可以在/proc/cpuinfo中看到每个cpu的详细信息。但是对于双核的cpu，在cpuinfo中会看到两个cpu。常常会让人误以为是两个单核的cpu。
+总核数 = 物理CPU个数 X 每颗物理CPU的核数
+总逻辑CPU数 = 物理CPU个数 X 每颗物理CPU的核数 X 超线程数
+逻辑CPU个数 > 物理CPU个数 * CPU内核数   开启了超线程
+逻辑CPU个数 = 物理CPU个数 * CPU内核数   没有开启超线程
+
+内存查看： 
+lwx838779@lfgphicprd19011:~/nick$ grep MemTotal /proc/meminfo  查看总的物理内存
+MemTotal:       32929936 kB
+lwx838779@lfgphicprd19011:~/nick$ grep MemFree /proc/meminfo    查看剩余的物理内存
+MemFree:         5419164 kB
+
+网络查看：
+ifconfig # 查看所有网络接口的属性
+iptables -L # 查看防火墙设置
+route -n # 查看路由表
+netstat -lntp # 查看所有监听端口
+netstat -antp # 查看所有已经建立的连接
+netstat -s # 查看网络统计信息进程
+
+进程查看：
+ps -ef # 查看所有进程
+top # 实时显示进程状态用户
+
+用户查看：
+w # 查看活动用户
+cut -d: -f1 /etc/passwd # 查看系统所有用户
+cut -d: -f1 /etc/group # 查看系统所有组
+crontab -l # 查看当前用户的计划任务服务
+
+系统服务查看
+chkconfig –list # 列出所有系统服务
+chkconfig –list | grep on # 列出所有启动的系统服务程序
+systemctl 启动的会变为系统服务， 
+
+软件包：
+rpm -qa # 查看所有安装的软件包
+
+分区：
+lwx838779@lfgphicprd19011:~/nick$ cat /proc/partitions  查看所有物理分区大小
+major minor  #blocks  name
+ 202        0   41943040 xvda
+ 202        1    3905536 xvda1
+ 202        2   38035456 xvda2
+ 202       64 1031798784 xvde
+  11        0    1048575 sr0
+lwx838779@lfgphicprd19011:~/nick$ mount | column -t     查看分区上建立的文件系统， 和分区的挂载点
+sysfs        on  /sys                             type  sysfs        (rw,nosuid,nodev,noexec,relatime)
+proc         on  /proc                            type  proc         (rw,nosuid,nodev,noexec,relatime)
+udev         on  /dev                             type  devtmpfs     (rw,nosuid,relatime,size=16439644k,nr_inodes=4109911,mode=755)
+devpts       on  /dev/pts                         type  devpts       (rw,nosuid,noexec,relatime,gid=5,mode=620,ptmxmode=000)
+tmpfs        on  /run                             type  tmpfs        (rw,nosuid,noexec,relatime,size=3292136k,nr_inodes=4115168,mode=755)
+/dev/xvda2   on  /                                type  ext3         (rw,relatime,errors=remount-ro,data=ordered)
+securityfs   on  /sys/kernel/security             type  securityfs   (rw,nosuid,nodev,noexec,relatime)
+tmpfs        on  /dev/shm                         type  tmpfs        (rw,nosuid,nodev,size=16460672k,nr_inodes=4115168)
+tmpfs        on  /run/lock                        type  tmpfs        (rw,nosuid,nodev,noexec,relatime,size=5120k,nr_inodes=4115168)
+tmpfs        on  /sys/fs/cgroup                   type  tmpfs        (ro,nosuid,nodev,noexec,size=16460672k,nr_inodes=4115168,mode=755)
+cgroup       on  /sys/fs/cgroup/systemd           type  cgroup       (rw,nosuid,nodev,noexec,relatime,xattr,release_agent=/lib/systemd/systemd-cgroups-agent,name=systemd)
+pstore       on  /sys/fs/pstore                   type  pstore       (rw,nosuid,nodev,noexec,relatime)
+cgroup       on  /sys/fs/cgroup/cpuset            type  cgroup       (rw,nosuid,nodev,noexec,relatime,cpuset)
+/dev/xvde    on  /home                            type  ext4         (rw,relatime,data=ordered)
+tmpfs        on  /run/user/1000                   type  tmpfs        (rw,nosuid,nodev,relatime,size=3292996k,mode=700,uid=1000,gid=1000)
+tmpfs        on  /run/user/1002                   type  tmpfs        (rw,nosuid,nodev,relatime,size=3292996k,mode=700,uid=1002,gid=1002)
+binfmt_misc  on  /proc/sys/fs/binfmt_misc         type  binfmt_misc  (rw,relatime)
+tmpfs        on  /run/user/1003                   type  tmpfs        (rw,nosuid,nodev,relatime,size=3292996k,mode=700,uid=1003,gid=1003)
+tmpfs        on  /run/user/1001                   type  tmpfs        (rw,nosuid,nodev,relatime,size=3292996k,mode=700,uid=1001,gid=1001)
+以上面的一条为例子：
+/dev/xvde    on  /home                            type  ext4         (rw,relatime,data=ordered)
+分区名为/dev/xvde， 分区上的文件系统为ext4, rw表示可写， 分区挂载点事/home
+
+查看linux的内核版本号， 和ubuntu的版本号
+lwx838779@lfgphicprd19011:~/nick$ cat /proc/version
+Linux version 4.4.0-131-generic (buildd@lgw01-amd64-015) (gcc version 5.4.0 20160609 (Ubuntu 5.4.0-6ubuntu1~16.04.10) ) #157-Ubuntu SMP Thu Jul 12 15:51:36 UTC 2018
+
+
+
+------------------------------------------------------------------------------------------------------------------------
+查看硬件配置
+
+cpu核数
+lwx838779@lfgphicprd19011:~/nick$ sudo dmidecode -t processor
+# dmidecode 3.0
+Scanning /dev/mem for entry point.
+SMBIOS 2.4 present.
+
+Handle 0x0401, DMI type 4, 26 bytes
+Processor Information
+        Socket Designation: CPU 1
+        Type: Central Processor
+        Family: Other
+        Manufacturer: Intel
+        ID: E4 06 03 00 FF FB 89 17
+        Version: Intel(R) Xeon(R) CPU E5-2690 v2 @ 3.00GHz
+        Voltage: Unknown
+        External Clock: Unknown
+        Max Speed: 3000 MHz
+        Current Speed: 3000 MHz
+        Status: Populated, Enabled
+        Upgrade: Other
+
+Handle 0x0402, DMI type 4, 26 bytes
+Processor Information
+        Socket Designation: CPU 2
+        Type: Central Processor
+        Family: Other
+        Manufacturer: Intel
+        ID: E4 06 03 00 FF FB 89 17
+        Version: Intel(R) Xeon(R) CPU E5-2690 v2 @ 3.00GHz
+        Voltage: Unknown
+        External Clock: Unknown
+        Max Speed: 3000 MHz
+        Current Speed: 3000 MHz
+        Status: Populated, Enabled
+        Upgrade: Other
+一共有16个， 篇幅原因没列出
+这里的CPU 1 表示cpu的第一个核， 不是第一个cpu. 
+核数 逻辑树， 超线程数， 好文; 
+https://blog.csdn.net/qq_35938548/article/details/81365802
+
+
+lwx838779@lfgphicprd19011:~/nick$  sudo dmidecode -t memory
+# dmidecode 3.0
+Scanning /dev/mem for entry point.
+SMBIOS 2.4 present.
+
+Handle 0x1000, DMI type 16, 15 bytes
+Physical Memory Array
+        Location: Other
+        Use: System Memory
+        Error Correction Type: Multi-bit ECC
+        Maximum Capacity: 32760 MB
+        Error Information Handle: Not Provided
+        Number Of Devices: 2
+
+Handle 0x1100, DMI type 17, 21 bytes
+Memory Device
+        Array Handle: 0x1000
+        Error Information Handle: 0x0000
+        Total Width: 64 bits
+        Data Width: 64 bits
+        Size: 16384 MB
+        Form Factor: DIMM
+        Set: None
+        Locator: DIMM 0
+        Bank Locator: Not Specified
+        Type: RAM
+        Type Detail: None
+
+Handle 0x1101, DMI type 17, 21 bytes
+Memory Device
+        Array Handle: 0x1000
+        Error Information Handle: 0x0000
+        Total Width: 64 bits
+        Data Width: 64 bits
+        Size: 16376 MB
+        Form Factor: DIMM
+        Set: None
+        Locator: DIMM 1
+        Bank Locator: Not Specified
+        Type: RAM
+可以在上面的命令进行过滤：
+lwx838779@lfgphicprd19011:~/nick$ sudo dmidecode -t memory | grep Size:
+        Size: 16384 MB
+        Size: 16376 MB
+这是两个内存条， 总的物理内存， 是两个内存条之和
+
+
+
+======================================================================
+
+
+====================================================================
+ubuntu 安装NFS
+1、sudo apt-get install nfs-kernel-server
+
+2、打开配置：vi /etc/exports
+
+3、exports的最后一行加入/data/fileshare   *(rw,sync,no_subtree_check,no_root_squash)这句话，保存退出
+
+4、mkdir -p   /data/fileshare
+
+5、sudo /etc/init.d/rpcbind restart      
+
+（nfs是一个RPC程序，第一步安装成功后，使用它时需要映射提前映射好端口，映射端口，
+
+ 
+
+通过rpcbind 设定）
+
+ 
+
+6、重启nfs服务   sudo /etc/init.d/nfs-kernel-server restart 
+
+ 
+
+==============
+
+ 
+
+挂载上面的共享
+
+vi /etc/fstab添加
+
+192.168.22.22:/data/fileshare /data/fileshare               nfs    rw,tcp,soft  0  0
+
+保存
+
+ 
+
+执行mount -a
+
+ 
+
+取消挂载  umount   /data/fileshare  
+
+
+master@ubuntu:~/k8s$ sudo exportfs -a
+exportfs: Failed to stat /data/fileshare: Stale file handle
+master@ubuntu:~/k8s$ df -h
+
+
+master@ubuntu:~/k8s$ kubectl edit svc/mysql-svc
+ 
+ 改了端口， 可以马上生效
