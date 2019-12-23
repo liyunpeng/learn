@@ -1,0 +1,30 @@
+$cat > /tmp/etcd0.service <<EOF
+[Unit]
+Description=etcd
+Documentation=https://github.com/coreos/etcd
+Conflicts=etcd.service
+Conflicts=etcd2.service
+
+[Service]
+Type=notify
+Restart=always
+RestartSec=5s
+LimitNOFILE=40000
+TimeoutStartSec=0
+
+ExecStart=/usr/local/bin/etcd --name etcd1 
+--data-dir /data/etcd 
+--initial-advertise-peer-urls http://192.168.0.68:2380 
+--listen-peer-urls http://192.168.0.68:2380 
+--listen-client-urls http://192.168.0.68:2379,http://127.0.0.1:2379 
+--advertise-client-urls http://192.168.0.68:2379 
+--initial-cluster-token etcd-cluster-pro 
+--initial-cluster etcd0=http://192.168.0.204:2380,etcd1=http://192.168.0.68:2380 
+--initial-cluster-state new
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+$sudo mv /tmp/etcd1.service /etc/systemd/system/etcd1.service
+$sudo mkdir /data/etcd -p
