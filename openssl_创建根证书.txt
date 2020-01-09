@@ -79,7 +79,7 @@ DEK-Info: AES-256-CBC,DA8E0F08E733FD9B2C007453590759D7
 整理中间大段字符串
 -----END RSA PRIVATE KEY-----
 
-4. 创建证书请求文件 Certificate Signing Requests(csr) 
+4. 创建根证书的请求文件 Certificate Signing Requests(csr) 
 /rootca$ mkdir csr
 /rootca$ openssl req -new -config rootca.cnf -sha256 -key private/rootca.key.pem -out csr/rootca.csr.pem
 /rootca$ cat csr/rootca.csr.pem
