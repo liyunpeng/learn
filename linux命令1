@@ -73,14 +73,14 @@ systemctl 启动的会变为系统服务，
 rpm -qa # 查看所有安装的软件包
 
 分区：
-lwx838779@lfgphicprd19011:~/nick$ cat /proc/partitions  查看所有物理分区大小
+$ cat /proc/partitions  查看所有物理分区大小
 major minor  #blocks  name
  202        0   41943040 xvda
  202        1    3905536 xvda1
  202        2   38035456 xvda2
  202       64 1031798784 xvde
   11        0    1048575 sr0
-lwx838779@lfgphicprd19011:~/nick$ mount | column -t     查看分区上建立的文件系统， 和分区的挂载点
+$ mount | column -t     查看分区上建立的文件系统， 和分区的挂载点
 sysfs        on  /sys                             type  sysfs        (rw,nosuid,nodev,noexec,relatime)
 proc         on  /proc                            type  proc         (rw,nosuid,nodev,noexec,relatime)
 udev         on  /dev                             type  devtmpfs     (rw,nosuid,relatime,size=16439644k,nr_inodes=4109911,mode=755)
@@ -102,19 +102,17 @@ tmpfs        on  /run/user/1003                   type  tmpfs        (rw,nosuid,
 tmpfs        on  /run/user/1001                   type  tmpfs        (rw,nosuid,nodev,relatime,size=3292996k,mode=700,uid=1001,gid=1001)
 以上面的一条为例子：
 /dev/xvde    on  /home                            type  ext4         (rw,relatime,data=ordered)
-分区名为/dev/xvde， 分区上的文件系统为ext4, rw表示可写， 分区挂载点事/home
+分区名为/dev/xvde， 分区上的文件系统为ext4, rw表示可写，分区挂载点是/home
 
 查看linux的内核版本号， 和ubuntu的版本号
-lwx838779@lfgphicprd19011:~/nick$ cat /proc/version
+$ cat /proc/version
 Linux version 4.4.0-131-generic (buildd@lgw01-amd64-015) (gcc version 5.4.0 20160609 (Ubuntu 5.4.0-6ubuntu1~16.04.10) ) #157-Ubuntu SMP Thu Jul 12 15:51:36 UTC 2018
-
-
 
 ------------------------------------------------------------------------------------------------------------------------
 查看硬件配置
 
 cpu核数
-lwx838779@lfgphicprd19011:~/nick$ sudo dmidecode -t processor
+$ sudo dmidecode -t processor
 # dmidecode 3.0
 Scanning /dev/mem for entry point.
 SMBIOS 2.4 present.
@@ -153,8 +151,7 @@ Processor Information
 核数 逻辑树， 超线程数， 好文; 
 https://blog.csdn.net/qq_35938548/article/details/81365802
 
-
-lwx838779@lfgphicprd19011:~/nick$  sudo dmidecode -t memory
+$  sudo dmidecode -t memory
 # dmidecode 3.0
 Scanning /dev/mem for entry point.
 SMBIOS 2.4 present.
@@ -195,14 +192,10 @@ Memory Device
         Bank Locator: Not Specified
         Type: RAM
 可以在上面的命令进行过滤：
-lwx838779@lfgphicprd19011:~/nick$ sudo dmidecode -t memory | grep Size:
+$ sudo dmidecode -t memory | grep Size:
         Size: 16384 MB
         Size: 16376 MB
 这是两个内存条， 总的物理内存， 是两个内存条之和
-
-
-
-======================================================================
 
 
 ====================================================================
@@ -249,11 +242,9 @@ vi /etc/fstab添加
 
 取消挂载  umount   /data/fileshare  
 
-
 master@ubuntu:~/k8s$ sudo exportfs -a
 exportfs: Failed to stat /data/fileshare: Stale file handle
 master@ubuntu:~/k8s$ df -h
-
 
 master@ubuntu:~/k8s$ kubectl edit svc/mysql-svc
  
