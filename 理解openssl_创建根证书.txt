@@ -7,7 +7,7 @@ rootca/certs/           # 存放新建的证书
 rootca/db/              # spenssl 用来存放信息的目录
 rootca/private/         # 存放私钥
 rootca/crl/                                 
-rootca/csr/                                 
+rootca/csr/             # csr是certificate signing request表示存放的是证书签名请求文件
 rootca/newcerts/
 rootca/db/index
 rootca/db/serial
@@ -142,7 +142,7 @@ extendedKeyUsage = critical, OCSPSigning
 ===================================================================================================================
 
 3. 创建root私钥
-$ cd rootca/
+$ cd rootca
 $ openssl genrsa -aes256 -out private/rootca.key.pem 4096
 Generating RSA private key, 4096 bit long modulus
 .........................++
@@ -151,6 +151,7 @@ e is 65537 (0x10001)
 Enter pass phrase for private/rootca.key.pem:  输入123456 即设置一个密码， 用这个私钥去生成公钥或证书时，要用到这个密码
 Verifying - Enter pass phrase for private/rootca.key.pem:  重复输入123456 确认
 
+    
 $ cat private/rootca.key.pem
 -----BEGIN RSA PRIVATE KEY-----
 Proc-Type: 4,ENCRYPTED
@@ -165,7 +166,9 @@ $ openssl req -new -config rootca.cnf -sha256 -key private/rootca.key.pem -out c
     因为使用了配置文件，命令中省去了很多参数，如：
     因为rootca.cnf指定了：
     x509_extensions = v3_ca
-    所以命令不需写-x509，请求的证书也是x509格式
+    所以命令不需写-x509，请求的证书也是x509格式，
+    解释下x509，x509标准规定了证书需要包括的信息和信息的格式。
+    具体的，x509格式的证书要包括版本号（integer）、序列号（integer）、签名算法（object）、颁布者（set）、有效期（utc_time）、主体（set）、主体公钥（bit_string）、主体公钥算法（object）、签名值（bit_string）。
     
     因为rootca.cnf指定了：
     default_days = 3750
@@ -182,7 +185,7 @@ commonName = NickLi Root CA
 emailAddress = ljfpower@163.com
     所以就不需要手动输入国家名，城市，公司名，用户名，邮箱等证书需要的用户信息。   
 
-查看生成的证书请求文件rootca.csr.pem具体内容：
+查看生成的证书请求文件rootca.csr.pem具体内容，就是最后证书的实际内容，请求代表预演一下。
 $ openssl req -text -noout -in csr/rootca.csr.pem
 Certificate Request:
     Data:
