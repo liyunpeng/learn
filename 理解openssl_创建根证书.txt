@@ -50,8 +50,96 @@ createOpensslDir.sh
 rootca:
 certs csr crl  db  newcerts  private  rootca.cnf 
 
-2. 创建rootca.cnf的相关目录
-$ vi rootca/rootca.cnf  内容在<openssl_rootca.cnf.txt>一文中列出
+===================================================================================================================
+2. 创建rootca.cnf配置文件
+$ cat rootca.cnf
+# OpenSSL root CA configuration file.
+# v1
+[ ca ]
+# `man ca`
+default_ca = CA_default
+[ CA_default ]
+# Directory and file locations.
+dir = /home/lwx838779/nick/out/empty/ca2/rootca
+certs = $dir/certs
+crl_dir = $dir/crl
+new_certs_dir = $dir/newcerts
+database = $dir/db/index
+serial = $dir/db/serial
+RANDFILE = $dir/private/random
+# The root key and root certificate.
+private_key = $dir/private/rootca.key.pem
+certificate = $dir/certs/rootca.cert.pem
+# For certificate revocation lists.
+crlnumber = $dir/db/crlnumber
+crl = $dir/crl/rootca.crl.pem
+crl_extensions = crl_ext
+default_crl_days = 30
+# SHA-1 is deprecated, so use SHA-2 instead.
+default_md = sha256
+name_opt = ca_default
+cert_opt = ca_default
+default_days = 3750
+preserve = no
+policy = policy_strict
+[ policy_strict ]
+# The root CA should only sign intermediate certificates that match.
+# See the POLICY FORMAT section of `man ca`.
+countryName = match
+stateOrProvinceName = match
+organizationName = match
+organizationalUnitName = optional
+commonName = supplied
+emailAddress = optional
+[ req ]
+# Options for the `req` tool (`man req`).
+# Optionally, specify some defaults.
+prompt = no
+input_password = 123456
+
+default_bits = 2048
+distinguished_name = req_distinguished_name
+string_mask = utf8only
+# SHA-1 is deprecated, so use SHA-2 instead.
+default_md = sha256
+# Extension to add when the -x509 option is used.
+# make sure use x509_extensions, do not use req_extensions.
+x509_extensions = v3_ca
+# use the req_extensions not work.
+#req_extensions = v3_ca
+[ req_distinguished_name ]
+# See <https://en.wikipedia.org/wiki/Certificate_signing_request>.
+countryName = CN
+stateOrProvinceName = ShaanXi
+localityName = Xian
+organizationName = NickLi Ltd
+organizationalUnitName = NickLi Ltd CA
+commonName = NickLi Root CA
+emailAddress = ljfpower@163.com
+[ v3_ca ]
+# Extensions for a typical CA (`man x509v3_config`).
+subjectKeyIdentifier = hash
+authorityKeyIdentifier = keyid:always,issuer
+basicConstraints = critical, CA:true
+keyUsage = critical, digitalSignature, cRLSign, keyCertSign
+[ v3_intermediate_ca ]
+# Extensions for a typical intermediate CA (`man x509v3_config`).
+subjectKeyIdentifier = hash
+authorityKeyIdentifier = keyid:always,issuer
+basicConstraints = critical, CA:true, pathlen:0
+keyUsage = critical, digitalSignature, cRLSign, keyCertSign
+[ crl_ext ]
+# Extension for CRLs (`man x509v3_config`).
+authorityKeyIdentifier=keyid:always
+[ ocsp ]
+# Extension for OCSP signing certificates (`man ocsp`).
+basicConstraints = CA:FALSE
+subjectKeyIdentifier = hash
+authorityKeyIdentifier = keyid,issuer
+keyUsage = critical, digitalSignature
+extendedKeyUsage = critical, OCSPSigning
+
+===================================================================================================================
 
 3. 创建root私钥
 $ cd rootca/
@@ -70,10 +158,11 @@ DEK-Info: AES-256-CBC,DA8E0F08E733FD9B2C007453590759D7
 省略中间大段字符串
 -----END RSA PRIVATE KEY-----
 
+===================================================================================================================
 4. 创建根证书的请求文件 Certificate Signing Requests(csr) 
 $ openssl req -new -config rootca.cnf -sha256 -key private/rootca.key.pem -out csr/rootca.csr.pem
     req -new 表示生成的请求文件。
-    因为使用了配置文件，命令中省去了很多参数， 如：
+    因为使用了配置文件，命令中省去了很多参数，如：
     因为rootca.cnf指定了：
     x509_extensions = v3_ca
     所以命令不需写-x509，请求的证书也是x509格式
@@ -173,6 +262,7 @@ Certificate Request:
          00:05:9d:4c:b2:3f:dc:2b:1d:fd:c4:8b:53:ff:df:e5:38:56:
          e2:9d:d2:c6:7b:26:ce:f2
 
+===================================================================================================================
 5. 创建CA的根证书
 有了前一步中生成的 csr，我们就可以通过下面的命令生成 CA 的根证书了：
 /rootca$  openssl ca -selfsign \
@@ -308,6 +398,7 @@ Certificate:
          ef:94:d4:06:97:43:51:c1:02:0c:9d:65:88:5a:52:78:eb:06:
          28:6d:14:2f:58:4a:13:4a
 
+===================================================================================================================
 6. 列出所有生成的文件
 $ find
 .
