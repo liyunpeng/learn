@@ -1,65 +1,59 @@
 指导文件： https://www.cnblogs.com/sparkdev/p/10369313.html
 
-1. 创建rootca.cnf， 和相关目录
-$ mkdir rootca
-$ vi rootca/rootca.cnf
-$ vi rootca/rootca.cnf
-
-2.  准备目录和文件
-在 rootca 目录下创建下面的目录和文件：
-
+1. 准备好前提条件，这里为创建好需要的目录
+需要创建的目标目录：
+rootca
 rootca/certs/           # 存放新建的证书
 rootca/db/              # spenssl 用来存放信息的目录
 rootca/private/         # 存放私钥
 rootca/crl/                                 
+rootca/csr/                                 
 rootca/newcerts/
-
 rootca/db/index
 rootca/db/serial
 rootca/db/crlnumber
 
-用createOpensslDir.sh 完成以上目录的创建
+用脚本createOpensslDir.sh完成以上目录的创建：
 $ cat createOpensslDir.sh
 #!/bin/bash
-
-# create dir certs db private crl newcerts under rootca dir.
+# create rootca dir certs db private crl newcerts under rootca dir
+if [ ! -d rootca ]; then
+    mkdir -p rootca
+fi
 if [ ! -d rootca/certs ]; then
     mkdir -p rootca/certs
 fi
-
 if [ ! -d rootca/csr ]; then
     mkdir -p rootca/csr
 fi
-
 if [ ! -d rootca/db ]; then
     mkdir -p rootca/db
     touch rootca/db/index
     openssl rand -hex 16 > rootca/db/serial
     echo 1001 > rootca/db/crlnumber
 fi
-
 if [ ! -d rootca/private ]; then
     mkdir -p rootca/private
     chmod 700 rootca/private
 fi
-
 if [ ! -d rootca/crl ]; then
     mkdir -p rootca/crl
 fi
-
 if [ ! -d rootca/newcerts ]; then
     mkdir -p rootca/newcerts
 fi
-
 $ ./createOpensslDir.sh  
 
 $ ls *   
 createOpensslDir.sh
 
 rootca:
-certs csr  crl  db  newcerts  private  rootca.cnf 
+certs csr crl  db  newcerts  private  rootca.cnf 
 
-3. 创建 root 私钥
+2. 创建rootca.cnf的相关目录
+$ vi rootca/rootca.cnf  内容在<openssl_rootca.cnf.txt>一文中列出
+
+3. 创建root私钥
 $ cd rootca/
 /rootca$ openssl genrsa -aes256 -out private/rootca.key.pem 4096
 Generating RSA private key, 4096 bit long modulus
@@ -87,7 +81,7 @@ DEK-Info: AES-256-CBC,DA8E0F08E733FD9B2C007453590759D7
 整理中间大段字符串
 -----END CERTIFICATE REQUEST-----
 
-检查生成的 证书请求文件rootca.csr.pem：
+检查生成的证书请求文件rootca.csr.pem：
 /rootca$ openssl req -text -noout -in csr/rootca.csr.pem
 Certificate Request:
     Data:
@@ -166,9 +160,8 @@ Certificate Request:
          00:05:9d:4c:b2:3f:dc:2b:1d:fd:c4:8b:53:ff:df:e5:38:56:
          e2:9d:d2:c6:7b:26:ce:f2
 
-5.  创建 CA 的根证书
+5. 创建CA的根证书
 有了前一步中生成的 csr，我们就可以通过下面的命令生成 CA 的根证书了：
-
 /rootca$  openssl ca -selfsign \
 >     -config rootca.cnf \
 >     -in csr/rootca.csr.pem \
@@ -204,7 +197,6 @@ Certificate Details:
                 Digital Signature, Certificate Sign, CRL Sign
 Certificate is to be certified until Jan  4 07:48:57 2040 GMT (7300 days)
 Sign the certificate? [y/n]:y
-
 1 out of 1 certificate requests certified, commit? [y/n]y
 Write out database with 1 new entries
 Data Base Updated
@@ -268,7 +260,6 @@ Certificate:
                 D1:9A:C2:55:26:1B:D4:5C:83:C2:E6:9D:7E:0E:67:1C:B6:00:16:03
             X509v3 Authority Key Identifier:
                 keyid:D1:9A:C2:55:26:1B:D4:5C:83:C2:E6:9D:7E:0E:67:1C:B6:00:16:03
-
             X509v3 Basic Constraints: critical
                 CA:TRUE  表示该证书被用作CA
             X509v3 Key Usage: critical
@@ -396,7 +387,6 @@ Certificate:
                 D1:9A:C2:55:26:1B:D4:5C:83:C2:E6:9D:7E:0E:67:1C:B6:00:16:03
             X509v3 Authority Key Identifier:
                 keyid:D1:9A:C2:55:26:1B:D4:5C:83:C2:E6:9D:7E:0E:67:1C:B6:00:16:03
-
             X509v3 Basic Constraints: critical
                 CA:TRUE
             X509v3 Key Usage: critical
@@ -431,3 +421,27 @@ Certificate:
          e2:10:4b:98:6e:31:0d:ae:1a:ef:b8:f5:ed:b3:d7:21:6b:a6:
          ef:94:d4:06:97:43:51:c1:02:0c:9d:65:88:5a:52:78:eb:06:
          28:6d:14:2f:58:4a:13:4a
+
+6. 列出所有生成的文件
+$ find
+.
+./rootca
+./rootca/newcerts
+./rootca/newcerts/6830D7CAEC9D7332B6C19FEAE88BFFAD.pem
+./rootca/crl
+./rootca/private
+./rootca/private/rootca.key.pem  根证书的私钥文件
+./rootca/csr
+./rootca/csr/rootca.csr.pem      根证书请求文件
+./rootca/certs
+./rootca/certs/rootca.cert.pem   根证书文件
+./rootca/db
+./rootca/db/crlnumber
+./rootca/db/index.old
+./rootca/db/index.attr
+./rootca/db/serial
+./rootca/db/serial.old
+./rootca/db/index
+./rootca/rootca.cnf               
+./createOpensslDir.sh
+    总结生成的顺序，先生成私钥文件，由私钥文件生成根证书的请求文件，由根证书请求文件生成根证书
