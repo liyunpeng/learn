@@ -150,8 +150,12 @@ Generating RSA private key, 4096 bit long modulus
 e is 65537 (0x10001)
 Enter pass phrase for private/rootca.key.pem:  输入123456 即设置一个密码， 用这个私钥去生成公钥或证书时，要用到这个密码
 Verifying - Enter pass phrase for private/rootca.key.pem:  重复输入123456 确认
-
     
+    genrsa 表示生成rsa私钥，-aes256表示对私钥用aes256进行加密。
+    理解一下加密算法，
+    rsa是非对称加密， 加解密用的钥匙不一样，rsa用时较多
+    aes是des的改进，des在早期加解密使用，因为容易破解，已经被aes取代，des和aes都是对称加密，即加密和解密的钥匙相同
+        
 $ cat private/rootca.key.pem
 -----BEGIN RSA PRIVATE KEY-----
 Proc-Type: 4,ENCRYPTED
