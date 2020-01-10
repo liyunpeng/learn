@@ -76,6 +76,16 @@ DEK-Info: AES-256-CBC,DA8E0F08E733FD9B2C007453590759D7
 4. 创建根证书的请求文件 Certificate Signing Requests(csr) 
 /rootca$ mkdir csr
 /rootca$ openssl req -new -config rootca.cnf -sha256 -key private/rootca.key.pem -out csr/rootca.csr.pem
+    因为指定了配置文件 -config rootca.cnf，所以就不需要手动输入国家名，城市，公司名，用户名，邮箱等
+[ req_distinguished_name ]
+countryName = CN
+stateOrProvinceName = ShaanXi
+localityName = Xian
+organizationName = NickLi Ltd
+organizationalUnitName = NickLi Ltd CA
+commonName = NickLi Root CA
+emailAddress = ljfpower@163.com
+
 /rootca$ cat csr/rootca.csr.pem
 -----BEGIN CERTIFICATE REQUEST-----
 整理中间大段字符串
@@ -87,10 +97,11 @@ Certificate Request:
     Data:
         Version: 0 (0x0)
         Subject: C=CN, ST=ShaanXi, L=Xian, O=NickLi Ltd, OU=NickLi Ltd CA, CN=NickLi Root CA/emailAddress=ljfpower@163.com
+        # 以上是主体用户信息，在openssl生成证书请求时，要么手动输入，要么配置文件指定
         Subject Public Key Info:
             Public Key Algorithm: rsaEncryption
-                Public-Key: (4096 bit)
-                Modulus:
+                Public-Key: (4096 bit)   #即1024个字节， RSA公钥必须是1024个字节，想要破解这1024字节，据说要万年以上的时间
+                Modulus:  公钥，证书请求文件里的公钥，和由此请求文件生成的证书中的公钥是相同的
                     00:a5:4e:29:6b:8d:1e:c9:d9:2c:7c:a9:2d:25:5f:
                     1b:d1:ae:fd:56:fd:dd:55:26:b9:37:ee:0c:f9:4a:
                     06:63:b2:7a:0f:4d:75:3d:b1:8d:83:3e:a8:71:cb:
@@ -218,7 +229,7 @@ Certificate:
         Subject Public Key Info:                 公钥信息
             Public Key Algorithm: rsaEncryption
                 Public-Key: (4096 bit)
-                Modulus:                         具体的公钥  
+                Modulus:                         具体的公钥                   
                     00:a5:4e:29:6b:8d:1e:c9:d9:2c:7c:a9:2d:25:5f:
                     1b:d1:ae:fd:56:fd:dd:55:26:b9:37:ee:0c:f9:4a:
                     06:63:b2:7a:0f:4d:75:3d:b1:8d:83:3e:a8:71:cb:
