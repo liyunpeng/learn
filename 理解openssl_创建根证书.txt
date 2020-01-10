@@ -67,12 +67,22 @@ $ cat private/rootca.key.pem
 -----BEGIN RSA PRIVATE KEY-----
 Proc-Type: 4,ENCRYPTED
 DEK-Info: AES-256-CBC,DA8E0F08E733FD9B2C007453590759D7
-整理中间大段字符串
+省略中间大段字符串
 -----END RSA PRIVATE KEY-----
 
 4. 创建根证书的请求文件 Certificate Signing Requests(csr) 
 $ openssl req -new -config rootca.cnf -sha256 -key private/rootca.key.pem -out csr/rootca.csr.pem
-    因为指定了配置文件 -config rootca.cnf里有这些内容：
+    req -new 表示生成的请求文件。
+    因为使用了配置文件，命令中省去了很多参数， 如：
+    因为rootca.cnf指定了：
+    x509_extensions = v3_ca
+    所以命令不需写-x509，请求的证书也是x509格式
+    
+    因为rootca.cnf指定了：
+    default_days = 3750
+    所以命令不需写-days 3750， 证书的有效期为3750天， k8s的证书设置356天，k8s的证书也是这个参数。
+    
+    因为rootca.cnf里有这些内容：
 [ req_distinguished_name ]
 countryName = CN
 stateOrProvinceName = ShaanXi
@@ -81,15 +91,10 @@ organizationName = NickLi Ltd
 organizationalUnitName = NickLi Ltd CA
 commonName = NickLi Root CA
 emailAddress = ljfpower@163.com
-    所以就不需要手动输入国家名，城市，公司名，用户名，邮箱等
-    
-$ cat csr/rootca.csr.pem
------BEGIN CERTIFICATE REQUEST-----
-整理中间大段字符串
------END CERTIFICATE REQUEST-----
+    所以就不需要手动输入国家名，城市，公司名，用户名，邮箱等证书需要的用户信息。   
 
-检查生成的证书请求文件rootca.csr.pem：
-/rootca$ openssl req -text -noout -in csr/rootca.csr.pem
+查看生成的证书请求文件rootca.csr.pem具体内容：
+$ openssl req -text -noout -in csr/rootca.csr.pem
 Certificate Request:
     Data:
         Version: 0 (0x0)
