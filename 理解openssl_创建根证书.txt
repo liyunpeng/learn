@@ -55,18 +55,15 @@ $ vi rootca/rootca.cnf  内容在<openssl_rootca.cnf.txt>一文中列出
 
 3. 创建root私钥
 $ cd rootca/
-/rootca$ openssl genrsa -aes256 -out private/rootca.key.pem 4096
+$ openssl genrsa -aes256 -out private/rootca.key.pem 4096
 Generating RSA private key, 4096 bit long modulus
 .........................++
 ...............................................++
 e is 65537 (0x10001)
-Enter pass phrase for private/rootca.key.pem:
-Verifying - Enter pass phrase for private/rootca.key.pem:
-/rootca$ ls
-certs  crl  db  newcerts  private  rootca.cnf
-/rootca$ ls private/rootca.key.pem
-private/rootca.key.pem
-/rootca$ cat  private/rootca.key.pem
+Enter pass phrase for private/rootca.key.pem:  输入123456 即设置一个密码， 用这个私钥去生成公钥或证书时，要用到这个密码
+Verifying - Enter pass phrase for private/rootca.key.pem:  重复输入123456 确认
+
+$ cat private/rootca.key.pem
 -----BEGIN RSA PRIVATE KEY-----
 Proc-Type: 4,ENCRYPTED
 DEK-Info: AES-256-CBC,DA8E0F08E733FD9B2C007453590759D7
@@ -74,8 +71,7 @@ DEK-Info: AES-256-CBC,DA8E0F08E733FD9B2C007453590759D7
 -----END RSA PRIVATE KEY-----
 
 4. 创建根证书的请求文件 Certificate Signing Requests(csr) 
-/rootca$ mkdir csr
-/rootca$ openssl req -new -config rootca.cnf -sha256 -key private/rootca.key.pem -out csr/rootca.csr.pem
+$ openssl req -new -config rootca.cnf -sha256 -key private/rootca.key.pem -out csr/rootca.csr.pem
     因为指定了配置文件 -config rootca.cnf里有这些内容：
 [ req_distinguished_name ]
 countryName = CN
