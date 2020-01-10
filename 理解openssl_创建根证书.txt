@@ -76,7 +76,7 @@ DEK-Info: AES-256-CBC,DA8E0F08E733FD9B2C007453590759D7
 4. 创建根证书的请求文件 Certificate Signing Requests(csr) 
 /rootca$ mkdir csr
 /rootca$ openssl req -new -config rootca.cnf -sha256 -key private/rootca.key.pem -out csr/rootca.csr.pem
-    因为指定了配置文件 -config rootca.cnf，所以就不需要手动输入国家名，城市，公司名，用户名，邮箱等
+    因为指定了配置文件 -config rootca.cnf里有这些内容：
 [ req_distinguished_name ]
 countryName = CN
 stateOrProvinceName = ShaanXi
@@ -85,8 +85,9 @@ organizationName = NickLi Ltd
 organizationalUnitName = NickLi Ltd CA
 commonName = NickLi Root CA
 emailAddress = ljfpower@163.com
-
-/rootca$ cat csr/rootca.csr.pem
+    所以就不需要手动输入国家名，城市，公司名，用户名，邮箱等
+    
+$ cat csr/rootca.csr.pem
 -----BEGIN CERTIFICATE REQUEST-----
 整理中间大段字符串
 -----END CERTIFICATE REQUEST-----
