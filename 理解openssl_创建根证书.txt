@@ -320,8 +320,13 @@ Certificate:
         Serial Number:
             68:30:d7:ca:ec:9d:73:32:b6:c1:9f:ea:e8:8b:ff:ad
     Signature Algorithm: sha256WithRSAEncryption
+    #Signature Algorithm 表示签名算法是 对明文进行了sha256摘要算法，得到hash串，然后对此串做RSA加密，加密得到结果就是签名
+        
         Issuer: C=CN, ST=ShaanXi, O=NickLi Ltd, OU=NickLi Ltd CA, CN=NickLi Root CA/emailAddress=ljfpower@163.com
+        #Issurer 是签发方，即签署证书的实体；然后是公钥信息；Subject 指明证书自身的信息，这里 Issurer 和 Subject 的信息是一样的
+        
         Validity
+        #Validity 指明证书的有效期为 2020-1-9 号至 2040-1-4 号；
             Not Before: Jan  9 07:48:57 2020 GMT
             Not After : Jan  4 07:48:57 2040 GMT
         Subject: C=CN, ST=ShaanXi, O=NickLi Ltd, OU=NickLi Ltd CA, CN=NickLi Root CA/emailAddress=ljfpower@163.com
@@ -366,12 +371,13 @@ Certificate:
                     e3:35:2d
                 Exponent: 65537 (0x10001)
         X509v3 extensions: 
+        #下面是X509 协议相关的信息，这部分信息由配置文件 rootca.cnf 中的 [ v3_ca ] 段控制
             X509v3 Subject Key Identifier:
                 D1:9A:C2:55:26:1B:D4:5C:83:C2:E6:9D:7E:0E:67:1C:B6:00:16:03
             X509v3 Authority Key Identifier:
                 keyid:D1:9A:C2:55:26:1B:D4:5C:83:C2:E6:9D:7E:0E:67:1C:B6:00:16:03
             X509v3 Basic Constraints: critical
-                CA:TRUE
+                CA:TRUE  表示是根证书。
             X509v3 Key Usage: critical
                 Digital Signature, Certificate Sign, CRL Sign
     Signature Algorithm: sha256WithRSAEncryption                   签名，签名都是RSA加密的，需要证书中的公钥对签名解密
