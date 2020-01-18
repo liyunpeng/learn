@@ -42,7 +42,7 @@ iris:之mvc
 先new一个iris的app对象， 
 这个app通用做法， 要做到以下几个地方 :
 1. 设置iris的log级别， irsi有自己实现的log , 默认在控制航输出， 
-2.  设置好全局静态文件目录的银蛇， 基本的pulbic文件加映射到rul地址。 
+2.  设置好全局静态文件目录的映射， 基本的pulbic文件加映射到rul地址。
 app.HandleDir("/public", "./web/public")
  3. 设置好出错的页面的提示
 到此app对象要设置的就完成了。 
@@ -52,7 +52,7 @@ app.HandleDir("/public", "./web/public")
 
 ----------------------------
 集群的master , 机器重启， 只要ip, 不变， 没有其他的服务冲突， 如没有etcd服务启动， 正常情况下 ， 
-k8ss是正常启动， 用kubectl get no可以看到ready装填。 
+k8s是正常启动， 用kubectl get no可以看到ready装填。
 如果ip地址变化了 ， 证书就失效了， 需要两个动作， 
 一是把所有的。conf配置文件中的地址，替换成新地址， 
 另一个是重新成圣证书文件。 

@@ -18,7 +18,7 @@ message UserRequest{
 // 定义请求参数
 string name = 1;
 }
-
+生成的：
 type UserRequest struct {
 	// 定义请求参数
 	Name                 string   `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
